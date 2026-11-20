@@ -1,0 +1,73 @@
+/* Zong Grid Excellence & Analysis Theme Tokens */
+:root {
+  --bg: #0A0F1C;
+  --surface: #111A2E;
+  --surface2: #16213A;
+  --line: #243352;
+  --fg: #E8EDF8;
+  --muted: #93A3C2;
+  --faint: #62749B;
+  --accent: #3987e5;
+  --accent-2: #7C6CFF;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --serious: #ec835a;
+  --crit: #d03b3b;
+
+  --band-95: #0ca30c;
+  --band-90: #3987e5;
+  --band-80: #fab219;
+  --band-0:  #d03b3b;
+
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #008300;
+}
+
+:root[data-theme="light"] {
+  --bg: #F2F5FA;
+  --surface: #FFFFFF;
+  --surface2: #F6F8FC;
+  --line: #DDE4F0;
+  --fg: #0E1A33;
+  --muted: #4E5F7D;
+  --faint: #8795AF;
+  --accent: #2a78d6;
+  --accent-2: #6250d6;
+
+  --band-95: #0ca30c;
+  --band-90: #2a78d6;
+  --band-80: #eda100;
+  --band-0:  #d03b3b;
+
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --s6: #008300;
+}
+
+:root[data-theme="dark"] .brand .wm-light,
+:root:not([data-theme="light"]) .brand .wm-light {
+  display: none;
+}
+
+:root[data-theme="light"] .brand .wm-dark {
+  display: none;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand .name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}

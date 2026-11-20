@@ -1,0 +1,64 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complaint dashboards · Zong RCTO Central</title>
+<meta name="theme-color" content="#040C07">
+{% include "site/_art.html" %}<script src="{% static 'site/js/theme.js' %}"></script>
+<link rel="icon" href="{% static 'site/img/favicon.svg' %}" type="image/svg+xml">
+<link rel="stylesheet" href="{% static 'site/css/site.css' %}">
+<link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'dashboard/css/central.css' %}">
+</head>
+<body class="app">
+<header class="appbar">
+  <div class="in">
+    <div class="row1">
+      {% include "site/_brand.html" %}
+      <nav class="tabs" id="tabs" aria-label="Complaint dashboards">
+        <a href="#cpm" data-k="cpm">CPM</a>
+        <a href="#crr" data-k="crr">CRR</a>
+        <a href="#crs" data-k="crs">CRS</a>
+        <a href="#tat" data-k="tat">L-3 TAT</a>
+        <a href="#compare" data-k="compare">Compare</a>
+      </nav>
+      <div class="tools">
+        <a class="pillbtn" data-nav href="{% url 'dashboards' %}" title="RCTO Central dashboards"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M12 20V5M19 20v-9"/></svg>RCTO</a>
+        <a class="pillbtn" data-nav href="{% url 'grid_report:report' %}" title="Grid Excellence dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Grid</a>
+        <a class="pillbtn" data-nav href="{% url 'chat_agent:chat' %}" title="Zee Chatbot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V17h0A2.5 2.5 0 0 1 4 14.5z"/></svg>Chat</a>
+        <button class="icon-btn" id="fsBtn" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+        <span class="periodchip" id="periodLbl"></span>
+        <a class="icon-btn" data-nav href="{% url 'home' %}" aria-label="Home" title="Home"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z"/></svg></a>
+        {% include "site/_theme_toggle.html" %}
+      </div>
+    </div>
+    <div class="row2">
+      <span class="glab">Chart</span>
+      <button type="button" class="vchip on" id="vals" aria-pressed="true">Values</button>
+      <span class="count">RCTO Central · CPM · CRR · CRS · L-3 TAT</span>
+    </div>
+  </div>
+</header>
+<header class="hero page">
+  <div class="wrap">
+    <div class="titles"><div class="crumb">RCTO Central</div><h1 id="h1"></h1><p id="sub"></p></div>
+    <div class="kpis" id="hero-kpis"></div>
+  </div>
+</header>
+<main class="wrap"><div class="story" id="story"></div><div id="view"></div></main>
+
+<script>
+const THEME = {"teams": ["#2F6BFF", "#00B8A9", "#FFB020", "#8B5CF6", "#F0558A", "#64748B"]};
+const DATA = {{ data_json|safe }};
+</script>
+{# Chart libraries: CDN first, then the local copy in static/dashboard/js/ (drop echarts.min.js and apexcharts.min.js there for offline use) #}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>window.echarts || document.write('<script src="{% static "dashboard/js/echarts.min.js" %}"><\/script>');</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+<script>window.ApexCharts || document.write('<script src="{% static "dashboard/js/apexcharts.min.js" %}"><\/script>');</script>
+<script src="{% static 'dashboard/js/kpi.js' %}"></script>
+<script src="{% static 'dashboard/js/central.js' %}"></script>
+{% include "site/_fs.html" %}
+</body>
+</html>

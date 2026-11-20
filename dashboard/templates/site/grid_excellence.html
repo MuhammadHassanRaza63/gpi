@@ -1,0 +1,259 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GPI Control Room</title>
+{% include "site/_art.html" %}<script src="{% static 'site/js/theme.js' %}"></script>
+<style>
+html{zoom:.90}@media (max-width:1000px){html{zoom:1}}
+:root{--bg:#0A0F1C;--surface:#111A2E;--surface2:#16213A;--line:#243352;--fg:#E8EDF8;--muted:#93A3C2;--faint:#62749B;--accent:#3987e5;--accent-2:#7C6CFF;--good:#0ca30c;--warn:#fab219;--crit:#d03b3b;
+--shadow:0 10px 30px rgba(0,0,0,.35);--font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:Calibri,Carlito,'Segoe UI',system-ui,sans-serif;color-scheme:dark}
+:root[data-theme="light"]{--bg:#F2F5FA;--surface:#FFFFFF;--surface2:#F6F8FC;--line:#DDE4F0;--fg:#0E1A33;--muted:#4E5F7D;--faint:#8795AF;--accent:#2a78d6;--accent-2:#6250d6;--shadow:0 8px 24px rgba(20,40,90,.10);color-scheme:light}
+*{box-sizing:border-box}h1,h2,p{margin:0}button{font:inherit;color:inherit}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;margin:0;padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));
+background-image:radial-gradient(900px 400px at 10% -10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent),radial-gradient(700px 340px at 96% 0%,color-mix(in srgb,var(--accent-2) 12%,transparent),transparent);background-repeat:no-repeat;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:16px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 -16px;padding:12px 16px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.row1{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px}
+.tab:hover{color:var(--fg)}.tab[aria-selected="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+.tools{display:flex;gap:8px;align-items:center}
+.iconbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;height:36px;min-width:36px;padding:0 11px;cursor:pointer;display:inline-flex;gap:7px;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600}
+.iconbtn:hover{color:var(--fg);border-color:var(--faint)}
+.row2{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.glab{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700}
+.chip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 11px;cursor:pointer;font-size:12.5px;font-weight:500}
+.chip:hover{color:var(--fg);border-color:var(--faint)}.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent);color:var(--fg)}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+input.field{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:32px;padding:0 10px;font:inherit;font-size:13px;width:170px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 26%,var(--surface)),var(--surface) 72%);box-shadow:var(--shadow)}
+.kpi .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.kpi .sub{font-size:12px;color:var(--muted);font-family:var(--mono)}.up{color:var(--good)}.dn{color:var(--crit)}
+.panel{display:flex;flex-direction:column;gap:16px}.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media (max-width:1100px){.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.card>h2{font-size:14px;font-weight:650;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card>h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:500;font-family:var(--mono)}
+.minis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.mc{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:14px;padding:10px 14px;min-width:0;display:flex;flex-direction:column;gap:1px;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 78%)}
+.mc .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.mc .v{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1.2}.mc .s{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:560px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+thead th{position:sticky;top:0;background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;z-index:1}
+tbody tr:hover td{background:var(--surface2)}td.num,th.num{text-align:right}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none;color:inherit}
+.brand .mark{width:40px;height:40px;flex:none}.brand .wordmark{height:26px;width:auto}.brand .wm-light{display:none}
+:root[data-theme="light"] .brand .wm-dark{display:none}:root[data-theme="light"] .brand .wm-light{display:inline}
+.brand .sep{width:1px;height:28px;background:var(--line)}.brand .name{display:flex;flex-direction:column;line-height:1.15}
+.brand .name b{font-size:16px;font-weight:700;letter-spacing:-.01em}.brand .name small{color:var(--muted);font-size:12px}
+.foot{color:var(--faint);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="bar"><div class="in">
+  <div class="row1">
+    {% include "grid_report/_brand.html" %}
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-t="overview" aria-selected="true">Overview</button>
+      <button class="tab" role="tab" data-t="crit" aria-selected="false">Critical KPIs</button>
+      <button class="tab" role="tab" data-t="assets" aria-selected="false">Assets &amp; Fuel</button>
+      <button class="tab" role="tab" data-t="rev" aria-selected="false">Revenue &amp; Traffic</button>
+      <button class="tab" role="tab" data-t="grids" aria-selected="false">Grids</button>
+    </div>
+    <div class="tools">
+      <a class="iconbtn" data-nav href="{% url 'grid_report:report' %}">Dashboard</a>
+      <a class="iconbtn" data-nav href="{% url 'home' %}" aria-label="Home">Home</a>
+      <button type="button" class="iconbtn theme-toggle" data-theme-toggle aria-label="Switch theme">◐</button>
+    </div>
+  </div>
+  <div class="row2"><div class="grp" id="filters"></div><span class="count" id="count"></span></div>
+</div></div>
+
+<div class="wrap">
+  <section class="kpis" id="kpis"></section>
+
+  <section class="panel" id="p-overview">
+    <div class="minis" id="insights"></div>
+    <div class="grid12">
+      <div class="card c6"><h2>Cell availability <em>monthly, site average %</em></h2><div id="chAvl"></div></div>
+      <div class="card c6"><h2>Loss of supply <em>hrs/site · lower is better</em></h2><div id="chLs"></div></div>
+      <div class="card c6"><h2>Network momentum <em>indexed, Oct-24 = 100</em></h2><div id="chIdx"></div></div>
+      <div class="card c6"><h2>Availability by sub-region <em>Sep-26 vs Oct-26</em></h2><div id="chRegAvl"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-crit" hidden>
+    <div class="grid12">
+      <div class="card c7"><h2>CEO MOAM escalations by sub-region <em>count per critical KPI</em></h2><div id="chEsc"></div></div>
+      <div class="card c5"><h2>Flagged sites by issue <em id="flagReg"></em></h2><div id="chFlags"></div></div>
+      <div class="card c7"><h2>Follow-up status of exception lists <em>rows per status</em></h2><div id="chStat"></div></div>
+      <div class="card c5"><h2>TXN critical alarms <em>by type</em></h2><div id="chTxn"></div></div>
+      <div class="card c12"><h2>Worst high-capacity links <em>E-band availability %, bottom 15</em></h2><div class="tablewrap"><table id="tblEb"><thead></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-assets" hidden>
+    <div class="grid12">
+      <div class="card c6"><h2>Battery bank mix <em>% of sites</em></h2><div id="chBB"></div></div>
+      <div class="card c6"><h2>DG status <em>sites with a DG</em></h2><div id="chDG"></div></div>
+      <div class="card c6"><h2>Site tier mix <em>% of sites</em></h2><div id="chTier"></div></div>
+      <div class="card c6"><h2>Unit consumption <em>kWh/site/month</em></h2><div id="chUnits"></div></div>
+      <div class="card c6"><h2>Fuel per site <em>litres/month</em></h2><div id="chFuel"></div></div>
+      <div class="card c6"><h2>Asset watch-list <em>sites by sub-region</em></h2><div id="chAsset"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-rev" hidden>
+    <div class="grid12">
+      <div class="card c4"><h2>Voice <em>Erl/site/day</em></h2><div id="chVoice"></div></div>
+      <div class="card c4"><h2>Data <em>GB/site/day</em></h2><div id="chData"></div></div>
+      <div class="card c4"><h2>Revenue <em>per site per month</em></h2><div id="chRev"></div></div>
+      <div class="card c6"><h2>Degradation loss sites <em>Voice &gt;100 Erl · Data &gt;100 GB · Revenue &gt;100K</em></h2><div id="chLoss"></div></div>
+      <div class="card c6"><h2>Revenue YoY growth <em>YTD-26 vs YTD-25, avg %</em></h2><div id="chYoy"></div></div>
+      <div class="card c12"><h2>Availability vs revenue per grid <em>each dot = one grid</em></h2><div id="chSc"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-grids" hidden>
+    <div class="card"><h2>Grid action list <input class="field" id="q" type="search" placeholder="Search grid…" aria-label="Search grid"></h2>
+      <div class="tablewrap"><table id="tblGrid"><thead></thead><tbody></tbody></table></div></div>
+  </section>
+  <p class="foot">Source: {{ ge_data.meta.source }} · as of {{ ge_data.meta.asOf }} · {{ ge_data.meta.sites }} sites · {{ ge_data.meta.grids }} grids</p>
+</div>
+
+{{ ge_data|json_script:"ge-data" }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.1/apexcharts.min.js"></script>
+<script>
+(function(){
+'use strict';
+const D=JSON.parse(document.getElementById('ge-data').textContent);
+const M=D.months,N=M.length-1,REGS=D.regions.slice(1),$=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const isDark=()=>{const t=document.documentElement.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
+const PAL=['#3987e5','#d95926','#199e70','#c98500','#d55181','#7C6CFF','#0ca30c','#93A3C2','#ec835a','#2bb5c9','#b07cff','#e0b100','#5fa8d3','#9bc53d','#c44569','#6c8ead'];
+const RC={}; REGS.forEach((r,i)=>RC[r]=PAL[i]);
+const st={tab:'overview',reg:'Central',q:'',sort:{k:'avl',d:1}};
+const fmt=(v,d=1)=>v==null||isNaN(v)?'–':Number(v).toLocaleString('en',{maximumFractionDigits:d,minimumFractionDigits:d});
+const K=v=>v==null?'–':fmt(v/1000,0)+'K';
+const tr=(k,r)=>D.trend[k][r||st.reg], sel=()=>D.reg[st.reg], short=r=>r.replace('Central-','C-');
+const inReg=g=>st.reg==='Central'||g.r===st.reg;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, charts={};
+function mrg(a,b){for(const k in b){a[k]=(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')?mrg(a[k],b[k]):b[k]}return a}
+function draw(id,o){
+  const el=$(id);if(!el)return;if(charts[id]){try{charts[id].destroy()}catch(e){}}
+  el.innerHTML='';const dk=isDark();
+  const base={chart:{background:'transparent',toolbar:{show:false},fontFamily:css('--font'),foreColor:css('--muted'),animations:{enabled:!reduce},zoom:{enabled:false}},
+    theme:{mode:dk?'dark':'light'},grid:{borderColor:css('--line'),strokeDashArray:3},tooltip:{theme:dk?'dark':'light'},dataLabels:{enabled:false},
+    legend:{position:'bottom',fontSize:'12px',markers:{radius:3}},stroke:{width:2,curve:'smooth'},colors:PAL};
+  charts[id]=new ApexCharts(el,mrg(base,o));charts[id].render();
+}
+const line=(id,ser,o)=>draw(id,mrg({chart:{type:'line',height:260},series:ser,xaxis:{categories:M,tickAmount:8,labels:{rotate:0}},yaxis:{labels:{formatter:v=>fmt(v,1)}},legend:{show:ser.length>1}},o||{}));
+const pair=k=>st.reg==='Central'?[{name:'Central',data:tr(k)}]:[{name:st.reg,data:tr(k)},{name:'Central',data:tr(k,'Central')}];
+function stack(id,cats,keys,get,pct,o){
+  draw(id,mrg({chart:{type:'bar',height:300,stacked:true,stackType:pct?'100%':undefined},plotOptions:{bar:{columnWidth:'55%',borderRadius:3}},
+    series:keys.map(k=>({name:k,data:cats.map(c=>get(c,k)||0)})),xaxis:{categories:cats.map(c=>c.length>12?c.slice(0,12)+'…':c)},stroke:{width:0}},o||{}));
+}
+const union=(f)=>{const s=[];REGS.forEach(r=>Object.keys(f(r)).forEach(k=>{if(!s.includes(k))s.push(k)}));return s};
+
+function kpi(l,v,s,c){return '<div class="kpi" style="--c:'+c+'"><span class="lab">'+l+'</span><span class="val">'+v+'</span><span class="sub">'+s+'</span></div>'}
+const dlt=(a,b,good,d,u)=>{if(a==null||b==null)return '';const x=a-b,up=(x>=0)===(good>0);return '<span class="'+(up?'up':'dn')+'">'+(x>=0?'▲ ':'▼ ')+fmt(Math.abs(x),d==null?2:d)+(u||'')+'</span> vs Sep'};
+function drawKpis(){
+  const r=sel(),a=tr('avl'),rv=tr('rev'),ek=st.reg==='Central'?'Central':st.reg.replace('Central-','C-');
+  const esc=D.esc.rows[ek]||[],tot=esc.reduce((x,y)=>x+y,0),li=(r.bb['Li-ion BB']||0)/r.sites*100;
+  const dg=r.dg['Not Operational']||0;
+  $('kpis').innerHTML=kpi('Sites',fmt(r.sites,0),D.meta.grids+' grids network-wide','var(--accent)')
+   +kpi('Cell availability',fmt(a[N],2)+'%',dlt(a[N],a[N-1],1),'#199e70')
+   +kpi('Revenue / site',K(rv[N]),dlt(rv[N]/1000,rv[N-1]/1000,1,1,'K'),'#7C6CFF')
+   +kpi('Critical escalations',fmt(tot,0),'CEO MOAM action items','#d95926')
+   +kpi('Li-ion share',fmt(li,0)+'%',fmt(dg,0)+' not-operational DGs','#c98500');
+  $('count').textContent=D.meta.asOf+' · '+st.reg;
+}
+function drawFilters(){
+  $('filters').innerHTML='<span class="glab">Sub-region</span>'+D.regions.map(r=>'<button class="chip" data-r="'+r+'" aria-pressed="'+(r===st.reg)+'">'+(r==='Central'?'All Central':r)+'</button>').join('');
+}
+function drawOverview(){
+  const L=D.grids.filter(inReg),a=[...L].filter(g=>g.avl!=null).sort((x,y)=>y.avl-x.avl);
+  const low=L.filter(g=>g.avl<98.5).length,gf=g=>Object.values(g.flags).reduce((x,y)=>x+y,0),top=[...L].sort((x,y)=>gf(y)-gf(x))[0];
+  const mc=(l,v,s,c)=>'<div class="mc" style="--c:'+c+'"><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></div>';
+  $('insights').innerHTML=a.length?mc('Best grid',a[0].g,fmt(a[0].avl,2)+'% availability','#0ca30c')+mc('Weakest grid',a[a.length-1].g,fmt(a[a.length-1].avl,2)+'% availability','#d03b3b')
+   +mc('Grids below 98.5%',low+' / '+L.length,'availability watch','#fab219')+mc('Most flagged grid',top.g,gf(top)+' flagged sites','#d95926'):'';
+  line('chAvl',pair('avl'),{yaxis:{labels:{formatter:v=>fmt(v,2)}}});
+  draw('chLs',{chart:{type:'area',height:260},series:pair('ls'),xaxis:{categories:M,tickAmount:8,labels:{rotate:0}},yaxis:{labels:{formatter:v=>fmt(v,1)}},fill:{type:'gradient',gradient:{opacityFrom:.35,opacityTo:.02}},legend:{show:st.reg!=='Central'}});
+  const idx=k=>{const s=tr(k),b=s.find(v=>v!=null);return s.map(v=>v==null?null:+(v/b*100).toFixed(1))};
+  line('chIdx',[{name:'Availability',data:idx('avl')},{name:'Voice',data:idx('voice')},{name:'Data',data:idx('data')},{name:'Revenue',data:idx('rev')}]);
+  draw('chRegAvl',{chart:{type:'bar',height:260},plotOptions:{bar:{borderRadius:3,columnWidth:'60%'}},stroke:{width:0},xaxis:{categories:REGS.map(short)},
+    series:[{name:'Sep-26',data:REGS.map(r=>tr('avl',r)[N-1])},{name:'Oct-26',data:REGS.map(r=>tr('avl',r)[N])}],yaxis:{min:96,max:100,labels:{formatter:v=>fmt(v,1)}},legend:{show:true}});
+}
+const FL={twop:'2 Phase Missing',fluct:'High fluctuation',temp:'High temp alarm',vswr:'VSWR',zero:'Zero traffic cells',down:'Prolonged down cells',below:'Chronic below base',revloss:'Revenue loss >100K',voiceloss:'Voice loss >100 Erl',dataloss:'Data loss >100 GB',bbweak:'Weak new Li-ion BB',udg:'Under-used DG'};
+function drawCrit(){
+  const rows=D.esc.rows;
+  stack('chEsc',REGS.map(short),D.esc.kpis,(c,k)=>rows[c][D.esc.kpis.indexOf(k)],false,{chart:{height:340},legend:{fontSize:'11px'}});
+  $('flagReg').textContent=st.reg;
+  const f=Object.entries(sel().flags).sort((a,b)=>b[1]-a[1]);
+  draw('chFlags',{chart:{type:'bar',height:340},plotOptions:{bar:{horizontal:true,borderRadius:3,distributed:true,barHeight:'68%'}},stroke:{width:0},legend:{show:false},
+    series:[{name:'Sites',data:f.map(x=>x[1])}],xaxis:{categories:f.map(x=>FL[x[0]])},dataLabels:{enabled:true,style:{fontSize:'11px'}}});
+  const sh=Object.keys(D.status),keys=[...new Set(sh.flatMap(s=>Object.keys(D.status[s])))];
+  draw('chStat',{chart:{type:'bar',height:300,stacked:true},plotOptions:{bar:{horizontal:true,borderRadius:3,barHeight:'60%'}},stroke:{width:0},
+    series:keys.map(k=>({name:k,data:sh.map(s=>D.status[s][k]||0)})),xaxis:{categories:sh},colors:['#d95926','#199e70','#c98500','#3987e5','#7C6CFF','#93A3C2']});
+  const nm=Object.entries(D.txn.name).slice(0,8);
+  draw('chTxn',{chart:{type:'bar',height:300},plotOptions:{bar:{horizontal:true,borderRadius:3,distributed:true,barHeight:'65%'}},stroke:{width:0},legend:{show:false},
+    series:[{name:'Alarms',data:nm.map(x=>x[1])}],xaxis:{categories:nm.map(x=>x[0].length>22?x[0].slice(0,22)+'…':x[0])},dataLabels:{enabled:true}});
+  tbl('tblEb',[['Link','l'],['Sub-region','r'],['Grid','g'],['Availability %','a',1],['FOPs remarks','rem']],D.eband);
+}
+function drawAssets(){
+  stack('chBB',REGS.map(short),union(r=>D.reg[r].bb),(c,k)=>D.reg['Central-'+c.slice(2)].bb[k],true);
+  stack('chDG',REGS.map(short),union(r=>D.reg[r].dg),(c,k)=>D.reg['Central-'+c.slice(2)].dg[k],false);
+  stack('chTier',REGS.map(short),union(r=>D.reg[r].tier),(c,k)=>D.reg['Central-'+c.slice(2)].tier[k],true);
+  line('chUnits',pair('units'));line('chFuel',pair('fuel'));
+  const AW=[['bbweak','Weak new Li-ion BB'],['udg','Under-used DG'],['temp','High temp alarm'],['twop','2 Phase missing']];
+  stack('chAsset',REGS.map(short),AW.map(x=>x[1]),(c,k)=>D.reg['Central-'+c.slice(2)].flags[AW.find(x=>x[1]===k)[0]],false);
+}
+function drawRev(){
+  line('chVoice',pair('voice'));line('chData',pair('data'));line('chRev',pair('rev'),{yaxis:{labels:{formatter:K}}});
+  stack('chLoss',REGS.map(short),['Voice loss','Data loss','Revenue loss'],(c,k)=>D.reg['Central-'+c.slice(2)].flags[{'Voice loss':'voiceloss','Data loss':'dataloss','Revenue loss':'revloss'}[k]],false,{chart:{height:300,stacked:false}});
+  draw('chYoy',{chart:{type:'bar',height:300},plotOptions:{bar:{borderRadius:3,distributed:true,columnWidth:'55%'}},stroke:{width:0},legend:{show:false},dataLabels:{enabled:true,formatter:v=>fmt(v,0)+'%'},
+    series:[{name:'YoY %',data:REGS.map(r=>+(D.reg[r].yoy*100).toFixed(1))}],xaxis:{categories:REGS.map(short)},colors:REGS.map(r=>RC[r])});
+  const L=D.grids.filter(g=>g.avl!=null&&g.rev!=null);
+  draw('chSc',{chart:{type:'scatter',height:380},series:REGS.map(r=>({name:short(r),data:L.filter(g=>g.r===r&&(st.reg==='Central'||st.reg===r)).map(g=>({x:+g.avl.toFixed(2),y:Math.round(g.rev),g:g.g}))})),
+    colors:REGS.map(r=>RC[r]),markers:{size:8,strokeWidth:0},legend:{show:true,position:'bottom'},xaxis:{type:'numeric',title:{text:'Cell availability %'},tickAmount:8,labels:{formatter:v=>fmt(v,1)}},yaxis:{title:{text:'Revenue / site'},labels:{formatter:K}},
+    tooltip:{custom:({seriesIndex,dataPointIndex,w})=>{const p=w.config.series[seriesIndex].data[dataPointIndex];return '<div style="padding:8px 11px;font-size:12px"><b>'+p.g+'</b><br>Availability '+fmt(p.x,2)+'%<br>Revenue '+K(p.y)+'</div>'}}});
+}
+function tbl(id,cols,rows,onSort){
+  const t=$(id);t.querySelector('thead').innerHTML='<tr>'+cols.map((c,i)=>'<th class="'+(c[2]!=null?'num':'')+'" data-i="'+i+'">'+c[0]+'</th>').join('')+'</tr>';
+  t.querySelector('tbody').innerHTML=rows.length?rows.map(r=>'<tr>'+cols.map(c=>{const v=typeof c[1]==='function'?c[1](r):r[c[1]];return '<td class="'+(c[2]!=null?'num mono':'')+'">'+(c[2]!=null?fmt(v,c[2]):(v==null?'–':v))+'</td>'}).join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'"><div class="empty">No rows match.</div></td></tr>';
+  if(onSort)t.querySelectorAll('th').forEach(th=>th.onclick=()=>onSort(cols[th.dataset.i]));
+}
+const gf=g=>Object.values(g.flags).reduce((x,y)=>x+y,0);
+const GC=[['Grid','g'],['Region','r'],['Sites','sites',0],['Avail %','avl',2],['Δ vs Sep','dav',2],['LS hrs','ls',2],['Voice','voice',0],['Data GB','data',0],['Revenue','rev',0],['YoY %','yp',0],['Flagged sites','fl',0],['CPM Oct','cpm',0]];
+const SK={'Grid':'g','Region':'r','Sites':'sites','Avail %':'avl','Δ vs Sep':'dav','LS hrs':'ls','Voice':'voice','Data GB':'data','Revenue':'rev','YoY %':'yp','Flagged sites':'fl','CPM Oct':'cpm'};
+function drawGrids(){
+  const q=st.q.toLowerCase(),k=st.sort.k;
+  const L=D.grids.filter(g=>inReg(g)&&(!q||g.g.toLowerCase().includes(q))).map(g=>Object.assign({},g,{dav:g.avl!=null&&g.avl_p!=null?g.avl-g.avl_p:null,yp:g.yoy==null?null:g.yoy*100,fl:gf(g)}));
+  L.sort((a,b)=>{const x=a[k],y=b[k];if(x==null)return 1;if(y==null)return -1;return (typeof x==='string'?x.localeCompare(y):x-y)*st.sort.d});
+  tbl('tblGrid',GC,L,c=>{const kk=SK[c[0]];st.sort=st.sort.k===kk?{k:kk,d:-st.sort.d}:{k:kk,d:kk==='g'||kk==='r'||kk==='ls'?1:-1};drawGrids()});
+}
+const DRAW={overview:drawOverview,crit:drawCrit,assets:drawAssets,rev:drawRev,grids:drawGrids};
+function render(){drawFilters();drawKpis();DRAW[st.tab]()}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;st.tab=b.dataset.t;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t===b));
+  ['overview','crit','assets','rev','grids'].forEach(t=>$('p-'+t).hidden=t!==st.tab);requestAnimationFrame(()=>DRAW[st.tab]())});
+$('filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;st.reg=b.dataset.r;render()});
+$('q').addEventListener('input',e=>{st.q=e.target.value;drawGrids()});
+new MutationObserver(()=>DRAW[st.tab]()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+render();
+})();
+</script>
+<script src="{% static 'site/js/chart-export.js' %}"></script>
+</body>
+</html>

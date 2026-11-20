@@ -1,0 +1,14 @@
+django
+openpyxl
+pandas
+numpy
+gunicorn
+whitenoise
+djangorestframework 
+openpyxl 
+langchain-community 
+pyxlsb
+sqlalchemy
+langchain-groq
+python-dotenv
+psycopg2-binary

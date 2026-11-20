@@ -1,0 +1,327 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LTE Traffic Migration</title>
+{% include "site/_art.html" %}<script src="{% static 'site/js/theme.js' %}"></script>
+<style>
+html{zoom:.90}
+@media (max-width:1000px){html{zoom:1}}
+
+/* Same design tokens as report.html so both dashboards look like one product (theme is shared via localStorage 'ged-theme'). */
+:root{
+  --bg:#0A0F1C; --surface:#111A2E; --surface2:#16213A; --line:#243352;
+  --fg:#E8EDF8; --muted:#93A3C2; --faint:#62749B;
+  --accent:#3987e5; --accent-2:#7C6CFF;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:Calibri,Carlito,'Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F2F5FA; --surface:#FFFFFF; --surface2:#F6F8FC; --line:#DDE4F0;
+    --fg:#0E1A33; --muted:#4E5F7D; --faint:#8795AF; --accent:#2a78d6; --accent-2:#6250d6;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+    --shadow:0 8px 24px rgba(20,40,90,.10); color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#F2F5FA; --surface:#FFFFFF; --surface2:#F6F8FC; --line:#DDE4F0;
+  --fg:#0E1A33; --muted:#4E5F7D; --faint:#8795AF; --accent:#2a78d6; --accent-2:#6250d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --shadow:0 8px 24px rgba(20,40,90,.10); color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px;
+  background-image:radial-gradient(900px 400px at 10% -10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent),radial-gradient(700px 340px at 96% 0%,color-mix(in srgb,var(--accent-2) 12%,transparent),transparent);
+  background-repeat:no-repeat;background-attachment:fixed}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:16px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+
+/* command bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.row1{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;flex:none}
+.brand h1{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+.tools{display:flex;gap:8px;align-items:center}
+.iconbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;height:36px;min-width:36px;padding:0 11px;cursor:pointer;display:inline-flex;gap:7px;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600}
+.iconbtn:hover{color:var(--fg);border-color:var(--faint)}
+.row2{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.glab{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700;margin-right:2px}
+.chip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 11px;cursor:pointer;font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.chip:hover{color:var(--fg);border-color:var(--faint)}
+.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c,var(--accent)) 22%,transparent);border-color:var(--c,var(--accent));color:var(--fg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
+.sep{width:1px;height:20px;background:var(--line)}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+select.field{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:32px;padding:0 10px;font:inherit;font-size:13px}
+input.field{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:32px;padding:0 10px;font:inherit;font-size:13px;width:160px}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:16px;padding:12px 14px 6px;min-width:0;display:flex;flex-direction:column;gap:2px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c) 26%,var(--surface)),var(--surface) 72%);box-shadow:var(--shadow)}
+.kpi .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.kpi .sub{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.kpi .sp{height:44px;margin:0 -6px -4px}
+.up{color:var(--good)} .dn{color:var(--crit)}
+
+/* panels / cards */
+.panel{display:flex;flex-direction:column;gap:16px}
+.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media (max-width:1100px){.c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 12}.c3.half,.c4.half{grid-column:span 6}}
+@media (max-width:640px){.c3.half,.c4.half{grid-column:span 12}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.card>h2{font-size:14px;font-weight:650;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card>h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:500;font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);font-weight:400}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.note{font-size:12.5px;color:var(--muted);margin:2px 0 8px}
+.note b{color:var(--fg);font-weight:600}
+.pill{--c:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);color:var(--fg)}
+.pill b{color:var(--c);font-weight:800}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.sechead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
+.sechead h2{font-size:16px;font-weight:700}
+.sechead span{color:var(--muted);font-size:12.5px}
+
+/* insights */
+.ins{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:16px;padding:14px 16px;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 18%,var(--surface)),var(--surface) 75%)}
+.ins .t{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ins .h{font-size:19px;font-weight:700;margin:3px 0 4px;letter-spacing:-.01em}
+.ins p{font-size:12.5px;color:var(--muted)}
+.ins p b{color:var(--fg)}
+
+/* quadrant tiles */
+.qt{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 45%,var(--line));border-radius:14px;padding:12px 14px;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 80%)}
+.qt .n{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1.1}
+.qt .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.qt .d{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+thead th{position:sticky;top:0;background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;z-index:1}
+thead th:hover{color:var(--fg)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface2)}
+td.num,th.num{text-align:right}
+.scroll{max-height:560px;overflow:auto}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.plot3d{width:100%;height:520px}
+.foot{color:var(--faint);font-size:11.5px;text-align:center;line-height:1.6}
+@media (max-width:560px){.sep{display:none}.count{margin-left:0}input.field{width:100%}}
+
+/* impact tab */
+.imp-bar .note{margin:8px 0 0}
+.imp-hero{--c1:var(--accent);--c2:var(--accent-2);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr);gap:20px;border-radius:20px;padding:22px 24px;border:1px solid color-mix(in srgb,var(--c1) 40%,var(--line));
+  background:radial-gradient(620px 240px at 0% 0%,color-mix(in srgb,var(--c1) 26%,transparent),transparent 70%),radial-gradient(520px 240px at 100% 100%,color-mix(in srgb,var(--c2) 24%,transparent),transparent 70%),var(--surface);box-shadow:var(--shadow)}
+@media (max-width:980px){.imp-hero{grid-template-columns:1fr}}
+.imp-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
+.imp-node{--c:var(--accent);padding:5px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--fg);background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 60%,transparent)}
+.imp-verdict{display:flex;align-items:center;gap:12px;font-size:32px;font-weight:800;letter-spacing:-.02em;margin:14px 0 6px;line-height:1.1}
+.imp-verdict i{width:12px;height:12px;border-radius:50%;background:var(--v);box-shadow:0 0 0 5px color-mix(in srgb,var(--v) 25%,transparent);flex:none}
+.imp-left p{color:var(--muted);font-size:13.5px;max-width:62ch}
+.imp-meta{margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.imp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:center}
+.imp-stat{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 38%,var(--line));border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 20%,var(--surface)),var(--surface) 80%)}
+.imp-stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.imp-stat .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1.15;letter-spacing:-.02em}
+.imp-stat .s{font-size:11.5px;color:var(--muted)}
+.imp-slider{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}
+.imp-slider b{font-size:20px}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;cursor:pointer}
+.imp-out{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 8px}
+.imp-out .imp-stat .v{font-size:21px}
+.tt{padding:8px 11px;font-size:12px;line-height:1.55}.tt span{color:var(--muted)}
+
+/* compact stat cards (short label, one value, one short line) */
+.minis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px}
+.mc{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:14px;padding:10px 14px;min-width:0;display:flex;flex-direction:column;gap:1px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 78%)}
+.mc .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .v{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1.2;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .s{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#p-impact .card{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 94%,var(--accent)),var(--surface))}
+</style>
+<link rel="stylesheet" href="{% static 'grid_report/css/grid-theme.css' %}">
+<style>
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{position:sticky;top:0;background:var(--surface2);text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:8px 9px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child,.tbl th.l,.tbl td.l{text-align:left}
+.tbl td{padding:7px 9px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);text-align:right;font-family:var(--mono);white-space:nowrap}
+.tbl tbody tr{cursor:pointer}.tbl tbody tr:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.tbl tbody tr.sel{background:color-mix(in srgb,var(--accent) 20%,transparent)}
+.scroll{max-height:520px;overflow:auto;border-radius:10px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;font-family:var(--font);border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.note{color:var(--muted);font-size:12.5px;line-height:1.6}
+.note b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="bar"><div class="in">
+  <div class="row1">
+    {% include "grid_report/_brand.html" %}
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-t="overview" aria-selected="true">Overview</button>
+      <button class="tab" role="tab" data-t="sites" aria-selected="false">Impacted sites</button>
+    </div>
+    <div class="tools">
+      <a class="iconbtn" data-nav href="{% url 'dashboards' %}" style="text-decoration:none" title="RCTO Central dashboards"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V11M12 21V4M19 21v-7"/></svg>RCTO</a>
+      <a class="iconbtn" data-nav href="{% url 'grid_report:report' %}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Dashboard</a>
+      <a class="iconbtn" data-nav href="{% url 'grid_report:analysis' %}" style="text-decoration:none" title="Cross-metric analysis dashboard">Analysis</a>
+      
+      <span class="periodchip" id="periodLbl"></span><a class="iconbtn" data-nav href="{% url 'home' %}" aria-label="Home" title="Home"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z"/></svg></a><button type="button" class="iconbtn theme-toggle" data-theme-toggle id="themeBtn" aria-label="Switch theme" title="Switch theme"><svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg><svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7z"/></svg></button>
+    </div>
+  </div>
+  <div class="row2" id="filters"><span class="glab">LTE traffic migration</span><span class="count" id="cnt"></span></div>
+</div></div>
+
+<div class="wrap">
+  <section class="kpis" id="kpis" aria-label="Headline KPIs"></section>
+
+  <section class="panel" id="p-overview">
+    <div class="minis" id="assessCards"></div>
+    <div class="grid12">
+      <div class="card c7"><h2>Traffic lost vs absorbed by neighbours <em>by terrain · GB/day</em></h2><div id="chTerrain"></div></div>
+      <div class="card c5"><h2>Neighbour absorption verdict <em>impacted sites</em></h2><div id="chAssess"></div></div>
+    </div>
+    <div class="grid12">
+      <div class="card c8"><h2>Grid wise: loss vs absorbed <em>GB/day · extended radius</em></h2><div id="chGrid"></div></div>
+      <div class="card c4"><h2>Traffic before / after <em>sum of impacted sites · GB/day</em></h2><div id="chBA"></div></div>
+    </div>
+    <div class="card"><h2>Loss vs neighbour absorption per site <em id="scEm">each dot = one impacted site</em></h2><div id="chScatter"></div></div>
+  </section>
+
+  <section class="panel" id="p-sites" hidden>
+    <div class="card">
+      <div class="grp" style="margin-bottom:10px">
+        <span class="glab">Terrain</span><select class="field" id="fTerrain"></select>
+        <span class="glab">Verdict</span><select class="field" id="fAssess"></select>
+        <span class="glab">Grid</span><select class="field" id="fGrid"></select>
+        <input class="field" id="fSite" placeholder="Site ID" aria-label="Site ID">
+      </div>
+      <div class="scroll"><table class="tbl" id="tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card" id="drill"><h2>Select a site <em>to see the neighbours that absorbed its traffic</em></h2><div class="note">Click any row above.</div></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.1/apexcharts.min.js"></script>
+{{ lte_data|json_script:"lte-data" }}
+{{ report_data.meta|json_script:"rep-meta" }}
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('lte-data').textContent), RM = JSON.parse(document.getElementById('rep-meta').textContent);
+  const M = D.meta, S = D.sites, $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const f0 = n => Math.round(n).toLocaleString('en-US'), f1 = n => (+n).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const pct = n => (n*100).toFixed(1)+'%';
+  const CAP = 300, OVER = S.filter(s=>s.abs_ext*100>CAP).length;
+  const ACOL = {'High Observed Uplift':'--good','Moderate Observed Uplift':'--warn','Low Observed Uplift':'--serious','No Observed Uplift':'--crit'};
+  const ASHORT = {'High Observed Uplift':'High','Moderate Observed Uplift':'Moderate','Low Observed Uplift':'Low','No Observed Uplift':'None'};
+  $('periodLbl').textContent = RM.period + ' · LTE traffic migration';
+  $('cnt').textContent = M.sites + ' impacted sites · source ' + M.source;
+  const drawn = {};
+  function draw(id, opt){
+    if(drawn[id]){ drawn[id].destroy(); }
+    const base = {chart:{background:'transparent',toolbar:{show:false},fontFamily:css('--mono'),foreColor:css('--muted'),animations:{enabled:false}},
+      grid:{borderColor:css('--line')}, dataLabels:{enabled:false}, theme:{mode:document.documentElement.dataset.theme==='light'?'light':'dark'}, legend:{labels:{colors:css('--muted')}}, tooltip:{theme:document.documentElement.dataset.theme==='light'?'light':'dark'}};
+    const o = Object.assign({}, base, opt); o.chart = Object.assign({}, base.chart, opt.chart);
+    const ch = new ApexCharts($(id), o); ch.render(); drawn[id] = ch;
+  }
+  // ---- KPI cards
+  const drop = (M.now-M.q1)/M.q1;
+  const K = [
+    {c:'--accent', l:'Impacted sites', v:f0(M.sites), s:'data loss >100 GB/day'},
+    {c:'--crit',   l:'Traffic loss', v:f0(M.loss)+'<small> GB/d</small>', s:f1(drop*100)+'% vs Q1 baseline'},
+    {c:'--good',   l:'Neighbour uplift', v:f0(M.up_ext)+'<small> GB/d</small>', s:'extended radius · initial '+f0(M.up_init)},
+    {c:'--warn',   l:'Absorption', v:pct(M.up_ext/M.loss), s:'initial radius '+pct(M.up_init/M.loss)},
+    {c:'--s5',     l:'Monthly loss (Oct)', v:(M.loss_m/1e6).toFixed(2)+'<small> M GB</small>', s:'uplift '+(M.up_m/1e6).toFixed(2)+' M GB'}];
+  $('kpis').innerHTML = K.map(k=>'<div class="kpi" style="--c:var('+k.c+')"><span class="lab">'+k.l+'</span><span class="val">'+k.v+'</span><span class="sub">'+k.s+'</span></div>').join('');
+  $('assessCards').innerHTML = Object.keys(ACOL).map(a=>'<div class="mc" style="--c:var('+ACOL[a]+')"><span class="l">'+a+'</span><span class="v">'+(D.assess[a]||0)+'</span><span class="s">'+pct((D.assess[a]||0)/M.sites)+' of impacted sites</span></div>').join('');
+  // ---- charts
+  const T = D.terrain.filter(t=>t.sites>0);
+  function charts(){
+    draw('chTerrain',{chart:{type:'bar',height:300},series:[{name:'Loss',data:T.map(t=>Math.round(t.loss))},{name:'Uplift (initial)',data:T.map(t=>Math.round(t.up_init))},{name:'Uplift (extended)',data:T.map(t=>Math.round(t.up_ext))}],
+      colors:[css('--crit'),css('--s1'),css('--good')], xaxis:{categories:T.map(t=>t.terrain+' ('+t.sites+')')}, plotOptions:{bar:{columnWidth:'60%',borderRadius:4}}, yaxis:{labels:{formatter:v=>f0(v)}}});
+    const ak = Object.keys(ACOL);
+    draw('chAssess',{chart:{type:'donut',height:300},series:ak.map(a=>D.assess[a]||0),labels:ak.map(a=>ASHORT[a]),colors:ak.map(a=>css(ACOL[a])),stroke:{colors:[css('--surface')]},
+      plotOptions:{pie:{donut:{size:'66%',labels:{show:true,total:{show:true,label:'Sites',color:css('--muted'),formatter:()=>M.sites}}}}}});
+    const G = D.grids.slice().sort((a,b)=>b.loss-a.loss).slice(0,20);
+    draw('chGrid',{chart:{type:'bar',height:320},series:[{name:'Loss',data:G.map(g=>Math.round(g.loss))},{name:'Uplift (extended)',data:G.map(g=>Math.round(g.up_ext))}],colors:[css('--crit'),css('--good')],
+      xaxis:{categories:G.map(g=>g.grid+' ('+g.sites+')'),labels:{rotate:-45}}, plotOptions:{bar:{columnWidth:'62%',borderRadius:3}}, yaxis:{labels:{formatter:v=>f0(v)}}});
+    draw('chBA',{chart:{type:'bar',height:320},series:[{name:'GB/day',data:[Math.round(M.q1),Math.round(M.now)]}],xaxis:{categories:['Q1 baseline','Oct-26']},colors:[css('--s1')],
+      plotOptions:{bar:{distributed:true,columnWidth:'55%',borderRadius:6}}, legend:{show:false}, yaxis:{labels:{formatter:v=>f0(v)}}, dataLabels:{enabled:true,formatter:v=>f0(v),style:{fontSize:'11px'}}});
+    draw('chScatter',{chart:{type:'scatter',height:340,zoom:{enabled:false}},
+      series:Object.keys(ACOL).map(a=>({name:ASHORT[a],data:S.filter(s=>s.assess===a).map(s=>({x:+s.loss.toFixed(1),y:Math.min(+(s.abs_ext*100).toFixed(1),CAP)}))})),colors:Object.keys(ACOL).map(a=>css(ACOL[a])),
+      xaxis:{title:{text:'Traffic loss (GB/day)'},tickAmount:8,labels:{formatter:v=>f0(v)}}, yaxis:{title:{text:'Absorption % (extended)'},labels:{formatter:v=>Math.round(v)}},
+      annotations:{yaxis:[{y:M.hi*100,borderColor:css('--good'),strokeDashArray:4},{y:M.mod*100,borderColor:css('--warn'),strokeDashArray:4}]}, markers:{size:5}});
+  }
+  $('scEm').textContent = 'each dot = one impacted site' + (OVER ? ' · '+OVER+' sites above '+CAP+'% shown at '+CAP+'%' : '');
+  // ---- table
+  const COLS = [['site','Site',v=>v,'l'],['grid','Grid',v=>v,'l'],['terrain','Terrain',v=>v,'l'],['q1','Q1 GB/d',f1],['now','Oct GB/d',f1],['loss','Loss GB/d',f1],['n_init','Nbrs init',f0],['up_init','Uplift init',f1],['abs_init','Abs init',pct],
+    ['n_ext','Nbrs ext',f0],['up_ext','Uplift ext',f1],['abs_ext','Abs ext',pct],['assess','Verdict',v=>'<span class="badge" style="--c:var('+ACOL[v]+')">'+ASHORT[v]+'</span>','l']];
+  let sortK='loss', sortD=-1, sel=null;
+  const opts = (id, arr, all) => { $(id).innerHTML = '<option value="">'+all+'</option>'+arr.map(x=>'<option>'+x+'</option>').join(''); };
+  opts('fTerrain', [...new Set(S.map(s=>s.terrain))], 'All terrains'); opts('fAssess', Object.keys(ACOL), 'All verdicts'); opts('fGrid', [...new Set(S.map(s=>s.grid))].sort(), 'All grids');
+  function rows(){
+    const t=$('fTerrain').value, a=$('fAssess').value, g=$('fGrid').value, q=$('fSite').value.trim();
+    return S.filter(s=>(!t||s.terrain===t)&&(!a||s.assess===a)&&(!g||s.grid===g)&&(!q||String(s.site).startsWith(q))).sort((x,y)=>{const a=x[sortK],b=y[sortK];return (a>b?1:a<b?-1:0)*sortD});
+  }
+  function table(){
+    const R = rows();
+    $('tbl').tHead.innerHTML = '<tr>'+COLS.map(c=>'<th class="'+(c[3]||'')+'" data-k="'+c[0]+'">'+c[1]+(sortK===c[0]?(sortD>0?' ▲':' ▼'):'')+'</th>').join('')+'</tr>';
+    $('tbl').tBodies[0].innerHTML = R.map(s=>'<tr data-s="'+s.site+'" class="'+(sel===s.site?'sel':'')+'">'+COLS.map(c=>'<td class="'+(c[3]||'')+'">'+c[2](s[c[0]])+'</td>').join('')+'</tr>').join('');
+    $('cnt').textContent = R.length+' of '+M.sites+' impacted sites';
+  }
+  $('tbl').tHead.addEventListener('click',e=>{const k=e.target.closest('th')?.dataset.k; if(!k)return; sortD = sortK===k ? -sortD : -1; sortK=k; table();});
+  $('tbl').tBodies[0].addEventListener('click',e=>{const tr=e.target.closest('tr'); if(!tr)return; sel=+tr.dataset.s; table(); drill(sel);});
+  ['fTerrain','fAssess','fGrid'].forEach(i=>$(i).addEventListener('change',table)); $('fSite').addEventListener('input',table);
+  function drill(id){
+    const s = S.find(x=>x.site===id), N = D.neighbours[String(id)] || [];
+    $('drill').innerHTML = '<h2>Site '+id+' · '+s.grid+' · '+s.terrain+' <em>'+ASHORT[s.assess]+' uplift · loss '+f1(s.loss)+' GB/d · absorbed '+pct(s.abs_ext)+'</em></h2>'+
+      (N.length ? '<div class="scroll"><table class="tbl"><thead><tr><th class="l">Neighbour</th><th class="l">Grid</th><th class="l">Terrain</th><th>Km</th><th class="l">Zone</th><th>Q1 GB/d</th><th>Oct GB/d</th><th>Raw uplift</th><th>Allocated</th></tr></thead><tbody>'+
+      N.map(n=>'<tr><td class="l">'+n[0]+'</td><td class="l">'+n[1]+'</td><td class="l">'+n[2]+'</td><td>'+n[3].toFixed(2)+'</td><td class="l">'+n[4]+'</td><td>'+f1(n[5])+'</td><td>'+f1(n[6])+'</td><td>'+f1(n[7])+'</td><td>'+f1(n[8])+'</td></tr>').join('')+'</tbody></table></div><div class="note" style="margin-top:6px">Top '+N.length+' neighbours by allocated uplift. Radius '+s.r_init+' km initial · '+s.r_ext+' km extended.</div>'
+      : '<div class="note">No neighbouring site inside the extended radius ('+s.r_ext+' km).</div>');
+  }padding:0">'+D.notes.map(n=>'<li>'+n.replace(/^\d\.\s*/,'')+'</li>').join('')+'</ol>';
+  // ---- tabs + theme re-draw
+  document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab'); if(!b)return;
+    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===b));
+    ['overview','sites'].forEach(t=>{$('p-'+t).hidden = t!==b.dataset.t; });
+    if(b.dataset.t==='overview') charts();
+  });
+  new MutationObserver(()=>charts()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  charts(); table();
+})();
+</script>
+</body>
+</html>

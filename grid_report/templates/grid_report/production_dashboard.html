@@ -1,0 +1,574 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production Telemetry &amp; SLA Executive Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <style>
+    :root {
+      --bg-main: #060a10;
+      --bg-card: rgba(13, 20, 30, 0.88);
+      --bg-elevated: #111b29;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(54, 214, 162, 0.35);
+      --text-main: #edf2f7;
+      --text-muted: #94a3b8;
+      --accent-mint: #36d6a2;
+      --accent-rose: #ff5c8a;
+      --accent-violet: #8d8cff;
+      --accent-amber: #ffb552;
+      --accent-sky: #38bdf8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at 10% 5%, rgba(54, 214, 162, 0.09), transparent 34%),
+        radial-gradient(circle at 90% 10%, rgba(141, 140, 255, 0.09), transparent 36%),
+        var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px);
+      background: rgba(6, 10, 16, 0.85);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(54, 214, 162, 0.14);
+      color: var(--accent-mint);
+      border: 1px solid rgba(54, 214, 162, 0.35);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-pill {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border-soft);
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-pill:hover,
+    .filter-pill.active {
+      color: var(--text-main);
+      border-color: var(--border-glow);
+      background: rgba(54, 214, 162, 0.14);
+    }
+
+    .container {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.7);
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .kpi-value-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .kpi-val {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .delta-chip {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(54, 214, 162, 0.14);
+      color: var(--accent-mint);
+      border: 1px solid rgba(54, 214, 162, 0.28);
+    }
+
+    .delta-chip.alert {
+      background: rgba(255, 92, 138, 0.14);
+      color: #ff8fb1;
+      border-color: rgba(255, 92, 138, 0.32);
+    }
+
+    .kpi-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-box {
+      width: 100%;
+      height: 340px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .search-input {
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-glow);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      white-space: nowrap;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-elevated);
+    }
+    .nav-link:hover { color: var(--text-main); border-color: var(--border-glow); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-title">
+      <span>Network &amp; SLA Executive Hub</span>
+      <span class="status-badge mono" id="periodBadge">LOADING...</span>
+    </div>
+
+    <div class="controls" id="regionFilters">
+      <a class="nav-link" href="{% url 'grid_report:report' %}">Dashboard</a>
+      <a class="nav-link" href="{% url 'grid_report:analysis' %}">Analysis</a>
+      <a class="nav-link" href="{% url 'grid_report:lte' %}">LTE Migration</a>
+      <button class="filter-pill active" data-region="Central" type="button">All Sub-Regions</button>
+      <button class="filter-pill" data-region="Central-1" type="button">Central-1</button>
+      <button class="filter-pill" data-region="Central-2" type="button">Central-2</button>
+      <button class="filter-pill" data-region="Central-3" type="button">Central-3</button>
+      <button class="filter-pill" data-region="Central-4" type="button">Central-4</button>
+      <button class="filter-pill" data-region="Central-5" type="button">Central-5</button>
+      <button class="filter-pill" data-region="Central-6" type="button">Central-6</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 4-Layer KPI Cards with ApexCharts Sparklines -->
+    <section class="kpi-grid">
+      <article class="card">
+        <div class="kpi-top">
+          <span>Cell Availability</span>
+          <span class="mono" style="color:var(--accent-mint)">KPI</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-val mono" id="kpiAvail">–</span>
+          <span class="delta-chip mono" id="deltaAvail">–</span>
+        </div>
+        <div class="kpi-sub">
+          <span>YTD Avail: <b class="mono" id="ytdAvail">–</b></span>
+          <span>Sites: <b class="mono" id="kpiSites">–</b></span>
+        </div>
+        <div id="sparkAvail" style="margin-top:8px;"></div>
+      </article>
+
+      <article class="card">
+        <div class="kpi-top">
+          <span>Load Shedding (LS)</span>
+          <span class="mono" style="color:var(--accent-violet)">POWER</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-val mono" id="kpiLs">–</span>
+          <span class="delta-chip mono" id="deltaLs">–</span>
+        </div>
+        <div class="kpi-sub">
+          <span>YTD LS: <b class="mono" id="ytdLs">–</b></span>
+          <span>Not-Op DGs: <b class="mono" id="kpiNotOp">–</b></span>
+        </div>
+        <div id="sparkLs" style="margin-top:8px;"></div>
+      </article>
+
+      <article class="card">
+        <div class="kpi-top">
+          <span>GPI (Grid Performance Index) Score</span>
+          <span class="mono" style="color:var(--accent-sky)">SCORE</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-val mono" id="kpiScore">–</span>
+          <span class="delta-chip mono" id="deltaScore">–</span>
+        </div>
+        <div class="kpi-sub">
+          <span>3 Basics + MW: <b class="mono" id="kpiBasics">–</b></span>
+          <span>Revenue / Site: <b class="mono" id="kpiRev">–</b></span>
+        </div>
+        <div id="sparkRev" style="margin-top:8px;"></div>
+      </article>
+
+      <article class="card">
+        <div class="kpi-top">
+          <span>LTE Data-Loss &amp; Open KPIs</span>
+          <span class="mono" style="color:var(--accent-rose)">ALERTS</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-val mono" id="kpiLossSites">–</span>
+          <span class="delta-chip alert mono" id="deltaLoss">–</span>
+        </div>
+        <div class="kpi-sub">
+          <span>Data Traffic: <b class="mono" id="kpiData">–</b></span>
+          <span>Chronic Avail: <b class="mono" id="kpiChronic">–</b></span>
+        </div>
+        <div id="sparkData" style="margin-top:8px;"></div>
+      </article>
+    </section>
+
+    <!-- Primary Apache ECharts Plots -->
+    <section class="charts-grid">
+      <article class="card">
+        <div class="section-head">
+          <h2 class="section-title" id="trendTitle">Monthly Availability (%) vs Load Shedding &amp; Data Traffic</h2>
+          <span class="mono" style="font-size:11px;color:var(--text-muted)">Apache ECharts · Live Workbook Data</span>
+        </div>
+        <div id="echartsTrend" class="chart-box"></div>
+      </article>
+
+      <article class="card">
+        <div class="section-head">
+          <h2 class="section-title">Sub-Region Grid Score vs Previous Month</h2>
+          <span class="mono" style="font-size:11px;color:var(--text-muted)" id="subCompareLabel">Comparative View</span>
+        </div>
+        <div id="echartsSubregion" class="chart-box"></div>
+      </article>
+    </section>
+
+    <!-- Filterable Production Scorecard Table -->
+    <section class="card">
+      <div class="section-head">
+        <h2 class="section-title">Regional Operational Breakdown</h2>
+        <input id="tableFilter" class="search-input" type="search" placeholder="Filter rows..." aria-label="Filter rows" />
+      </div>
+      <div class="table-wrap">
+        <table id="opsTable">
+          <thead>
+            <tr>
+              <th>Sub-Region</th>
+              <th>Sites</th>
+              <th>Grid Score %</th>
+              <th>Availability %</th>
+              <th>Load Shedding (h)</th>
+              <th>Data (GB/d)</th>
+              <th>Revenue / Site</th>
+              <th>LTE Data-Loss Sites</th>
+              <th>Not-Op DGs</th>
+            </tr>
+          </thead>
+          <tbody class="mono" id="opsTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  {{ report_data|json_script:"report-data" }}
+  {{ lte_data|json_script:"lte-data" }}
+
+  <script>
+    (function () {
+      const D = JSON.parse(document.getElementById('report-data').textContent);
+      const LTE = JSON.parse(document.getElementById('lte-data').textContent);
+      const months = D.months;
+      const regions = D.regions;
+      const summary = D.summary;
+      const meta = D.meta;
+
+      document.getElementById('periodBadge').textContent = (meta.period || 'OCT-26').toUpperCase() + ' · LIVE';
+      document.getElementById('subCompareLabel').textContent = meta.last + ' vs ' + meta.now;
+
+      const sparkInstances = {};
+      function mountSparkline(elId, data, color) {
+        if (sparkInstances[elId]) {
+          sparkInstances[elId].destroy();
+        }
+        const ch = new ApexCharts(document.querySelector(elId), {
+          chart: { type: 'area', height: 48, sparkline: { enabled: true }, animations: { enabled: false } },
+          series: [{ data }],
+          stroke: { curve: 'smooth', width: 2 },
+          colors: [color],
+          fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02 } },
+          tooltip: { fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
+        });
+        ch.render();
+        sparkInstances[elId] = ch;
+      }
+
+      const trendChart = echarts.init(document.getElementById('echartsTrend'));
+      const subChart = echarts.init(document.getElementById('echartsSubregion'));
+
+      function renderSubRegionComparison() {
+        const subRegions = regions.slice(1);
+        const labels = subRegions.map(r => r.name.replace('Central-', 'C-'));
+        const prevScores = subRegions.map(r => {
+          const s = summary.find(x => x.region === r.name);
+          return s ? +s.last.toFixed(1) : 0;
+        });
+        const nowScores = subRegions.map(r => +r.score.toFixed(1));
+
+        subChart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: [meta.last + ' Score', meta.now + ' Score'], textStyle: { color: '#94a3b8' } },
+          grid: { left: '3%', right: '3%', bottom: '6%', top: '15%', containLabel: true },
+          xAxis: { type: 'category', data: labels, axisLabel: { color: '#94a3b8' } },
+          yAxis: { type: 'value', min: 80, max: 112, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+          series: [
+            { name: meta.last + ' Score', type: 'bar', barMaxWidth: 16, data: prevScores, itemStyle: { color: '#38bdf8', borderRadius: [5, 5, 0, 0] } },
+            { name: meta.now + ' Score', type: 'bar', barMaxWidth: 16, data: nowScores, itemStyle: { color: '#36d6a2', borderRadius: [5, 5, 0, 0] } }
+          ]
+        });
+      }
+
+      function renderScope(regionName) {
+        const r = regions.find(x => x.name === regionName) || regions[0];
+        const s = summary.find(x => x.region === regionName) || summary[0];
+
+        const availArr = r.t_avl.map(v => +v.toFixed(2));
+        const lsArr = r.t_ls.map(v => +v.toFixed(2));
+        const dataArr = r.t_data.map(v => Math.round(v));
+        const revArr = r.t_rev.map(v => Math.round(v / 1000));
+
+        const prevAvl = availArr[availArr.length - 2] || r.avl;
+        const dAvl = r.avl - prevAvl;
+        const prevLs = lsArr[lsArr.length - 2] || r.ls;
+        const dLs = r.ls - prevLs;
+        const dScore = s ? (s.now - s.last) : 0;
+
+        document.getElementById('kpiAvail').textContent = r.avl.toFixed(2) + '%';
+        const elDeltaAvl = document.getElementById('deltaAvail');
+        elDeltaAvl.textContent = (dAvl >= 0 ? '+' : '') + dAvl.toFixed(2) + '% MoM';
+        elDeltaAvl.className = 'delta-chip mono' + (dAvl < 0 ? ' alert' : '');
+        document.getElementById('ytdAvail').textContent = r.avl_ytd.toFixed(2) + '%';
+        document.getElementById('kpiSites').textContent = Math.round(r.sites).toLocaleString('en-US');
+
+        document.getElementById('kpiLs').textContent = r.ls.toFixed(2) + 'h';
+        const elDeltaLs = document.getElementById('deltaLs');
+        elDeltaLs.textContent = (dLs >= 0 ? '+' : '') + dLs.toFixed(2) + 'h MoM';
+        elDeltaLs.className = 'delta-chip mono' + (dLs > 0 ? ' alert' : '');
+        document.getElementById('ytdLs').textContent = r.ls_ytd.toFixed(2) + 'h';
+        document.getElementById('kpiNotOp').textContent = Math.round(r.notop || 0);
+
+        document.getElementById('kpiScore').textContent = r.score.toFixed(1) + '%';
+        const elDeltaScore = document.getElementById('deltaScore');
+        elDeltaScore.textContent = (dScore >= 0 ? '+' : '') + dScore.toFixed(1) + ' vs ' + meta.last;
+        elDeltaScore.className = 'delta-chip mono' + (dScore < 0 ? ' alert' : '');
+        document.getElementById('kpiBasics').textContent = r.s_basics.toFixed(1) + ' / 50';
+        document.getElementById('kpiRev').textContent = (r.rev / 1000).toFixed(0) + 'K';
+
+        const lteSubset = regionName === 'Central' ? LTE.sites : LTE.sites.filter(x => x.region === regionName);
+        const lteLoss = lteSubset.reduce((acc, x) => acc + (x.loss || 0), 0);
+        document.getElementById('kpiLossSites').textContent = Math.round(r.data_loss || lteSubset.length) + ' Sites';
+        document.getElementById('deltaLoss').textContent = Math.round(lteLoss).toLocaleString('en-US') + ' GB/d Loss';
+        document.getElementById('kpiData').textContent = Math.round(r.data).toLocaleString('en-US') + ' GB/d';
+        document.getElementById('kpiChronic').textContent = Math.round(r.chronic || 0);
+
+        mountSparkline('#sparkAvail', availArr, '#36d6a2');
+        mountSparkline('#sparkLs', lsArr, '#8d8cff');
+        mountSparkline('#sparkRev', revArr, '#38bdf8');
+        mountSparkline('#sparkData', dataArr, '#ff5c8a');
+
+        document.getElementById('trendTitle').textContent = regionName + ': Monthly Availability (%) vs Load Shedding & Data Traffic';
+        trendChart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['Data (GB/d)', 'Load Shedding (h)', 'Availability (%)'], textStyle: { color: '#94a3b8' } },
+          grid: { left: '3%', right: '3%', bottom: '6%', top: '15%', containLabel: true },
+          xAxis: { type: 'category', data: months, axisLabel: { color: '#94a3b8' } },
+          yAxis: [
+            { type: 'value', name: 'Data / LS', axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+            { type: 'value', name: 'Avail %', min: 95, max: 100, axisLabel: { color: '#36d6a2', formatter: '{value}%' }, splitLine: { show: false } }
+          ],
+          series: [
+            { name: 'Data (GB/d)', type: 'bar', barMaxWidth: 26, data: dataArr, itemStyle: { color: 'rgba(56,189,248,0.55)', borderRadius: [6, 6, 0, 0] } },
+            { name: 'Load Shedding (h)', type: 'line', smooth: true, data: lsArr, itemStyle: { color: '#8d8cff' } },
+            { name: 'Availability (%)', type: 'line', smooth: true, yAxisIndex: 1, data: availArr, itemStyle: { color: '#36d6a2' } }
+          ]
+        });
+      }
+
+      // Build Regional Table dynamically from report.json
+      const tbody = document.getElementById('opsTbody');
+      tbody.innerHTML = regions.slice(1).map(r => `
+        <tr data-region="${r.name}">
+          <td><b>${r.name}</b></td>
+          <td>${Math.round(r.sites).toLocaleString('en-US')}</td>
+          <td>${r.score.toFixed(1)}%</td>
+          <td>${r.avl.toFixed(2)}%</td>
+          <td>${r.ls.toFixed(2)}</td>
+          <td>${Math.round(r.data).toLocaleString('en-US')}</td>
+          <td>${(r.rev / 1000).toFixed(0)}K</td>
+          <td>${Math.round(r.data_loss || 0)}</td>
+          <td>${Math.round(r.notop || 0)}</td>
+        </tr>
+      `).join('');
+
+      const rows = Array.from(document.querySelectorAll('#opsTbody tr'));
+      const filterInput = document.getElementById('tableFilter');
+      let activeRegion = 'Central';
+
+      function applyTableFilters() {
+        const q = (filterInput.value || '').toLowerCase().trim();
+        rows.forEach((tr) => {
+          const matchesRegion = activeRegion === 'Central' || tr.dataset.region === activeRegion;
+          const matchesText = !q || tr.innerText.toLowerCase().includes(q);
+          tr.style.display = matchesRegion && matchesText ? '' : 'none';
+        });
+      }
+
+      document.querySelectorAll('#regionFilters .filter-pill').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#regionFilters .filter-pill').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeRegion = btn.dataset.region;
+          renderScope(activeRegion);
+          applyTableFilters();
+        });
+      });
+
+      filterInput.addEventListener('input', applyTableFilters);
+      window.addEventListener('resize', () => {
+        trendChart.resize();
+        subChart.resize();
+      });
+
+      renderSubRegionComparison();
+      renderScope('Central');
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,610 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zee Chatbot · Zong RCTO Central</title>
+<meta name="description" content="Zee Chatbot: ask questions about network availability, load shedding, OFC cuts, complaints and Grid KPIs in plain English.">
+<meta name="theme-color" content="#040C07">
+<link rel="icon" href="{% static 'site/img/favicon.svg' %}" type="image/svg+xml">
+{% include "site/_art.html" %}
+<script src="{% static 'site/js/theme.js' %}"></script>
+<link rel="stylesheet" href="{% static 'site/css/site.css' %}">
+<link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'chat_agent/css/chat.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* ==========================================================================
+   ChatGPT-style layout for Zee Chatbot  (this block only restyles this page)
+- ONE knob for text size:  --zc-text   (all chat text is derived from it)
+- ONE knob for header size: --zc-head
+- own font + own palette (nothing from the default site theme is reused)
+   ========================================================================== */
+body.chatpage{
+  --zc-text: 12px;            /* base text size, was 14.5px  -> change this to scale all chat text */
+  --zc-head: 42px;            /* header height, was ~130px */
+  --zc-col: 800px;            /* width of the centred conversation column */
+
+  --font: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+  --zc-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  /* own palette (dark) */
+  --zc-bg:#070b0f; --zc-side:#0b1116; --zc-raise:#111921;
+  --card:#111921; --surface:#0f161d; --mini:#0b1116; --nav-bg:#070b0f;
+  --chip:rgba(255,255,255,.045); --chip-hover:rgba(255,255,255,.085); --chip-line:rgba(255,255,255,.12);
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.055);
+  --ink:#e8eef2; --ink-2:#a7b4be; --muted:#6c7a86;
+  --lime:#3fe6b0; --on-lime:#03120c; --accent-text:#66f0c3;
+  --m-avail:#36d6a2; --m-ls:#8d8cff; --m-complaints:#ff6f9c; --m-cuts:#ffb552;
+  background:var(--zc-bg) !important; background-image:none !important; color:var(--ink);
+  font-family:var(--font); font-size:var(--zc-text);
+}
+html[data-theme="light"] body.chatpage{
+  --zc-bg:#f5f7f6; --zc-side:#ffffff; --zc-raise:#ffffff;
+  --card:#ffffff; --surface:#ffffff; --mini:#eef2f0; --nav-bg:#f5f7f6;
+  --chip:rgba(10,45,35,.05); --chip-hover:rgba(10,45,35,.09); --chip-line:rgba(10,45,35,.16);
+  --line:rgba(10,45,35,.11); --line-2:rgba(10,45,35,.07);
+  --ink:#0c1a15; --ink-2:#38493f; --muted:#788a82;
+  --lime:#0fb283; --on-lime:#ffffff; --accent-text:#07785a;
+  --m-avail:#0e9f75; --m-ls:#5d5bd8; --m-complaints:#d6336c; --m-cuts:#d9820f;
+}
+body.chatpage::before, body.chatpage::after{ display:none !important; }
+
+/* ---------- compact header (was two tall rows) ---------- */
+body.chatpage .appbar{ background:var(--zc-bg); border-bottom:1px solid var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+body.chatpage .appbar .in{ width:100%; margin:0; padding:0 14px; gap:0; }
+body.chatpage .appbar .row1{ height:var(--zc-head); display:flex; align-items:center; gap:14px; }
+body.chatpage .appbar .row2{ display:none; }
+body.chatpage .appbar .brand{ zoom:.56; flex:none; }
+body.chatpage .appbar .brand .name small{ display:none; }
+body.chatpage .appbar .tabs{ margin:0 auto; padding:3px; gap:2px; }
+body.chatpage .appbar .tabs a{ padding:5px 13px; font-size:11px; font-weight:700; letter-spacing:.1px; }
+body.chatpage .appbar .tools{ display:flex; align-items:center; gap:6px; margin-left:0; }
+body.chatpage .appbar .icon-btn{ width:28px; height:28px; }
+body.chatpage .appbar .icon-btn svg{ width:14px; height:14px; }
+
+/* ---------- full-screen centre area & SMOOTH COLLAPSIBLE SIDEBAR ---------- */
+body.chatpage .chat{
+  width:100%;
+  margin:0;
+  gap:0;
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr);
+  transition:grid-template-columns .28s cubic-bezier(.4,0,.2,1);
+}
+body.chatpage .chat.noside{
+  grid-template-columns:0px minmax(0,1fr) !important;
+}
+body.chatpage .glass{ background:none; border:0; box-shadow:none; border-radius:0; -webkit-backdrop-filter:none; backdrop-filter:none; }
+
+/* sidebar = flat ChatGPT-style rail with smooth hide/active transition */
+body.chatpage .side{
+  background:var(--zc-side);
+  border-right:1px solid var(--line);
+  padding:12px 12px 14px;
+  gap:16px;
+  width:260px;
+  min-width:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .22s ease, padding .28s ease;
+}
+body.chatpage .chat.noside .side{
+  border-right-width:0 !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+  opacity:0;
+  transform:translateX(-20px);
+  pointer-events:none;
+}
+
+/* Sidebar Top Header Bar (Title + Collapse Button) */
+.side-top-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:-4px;
+}
+.side-top-bar .side-title{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:10.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  color:var(--accent-text);
+}
+.side-top-bar .side-status-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--lime);
+  box-shadow:0 0 8px var(--lime);
+}
+.side-close-btn{
+  width:24px;
+  height:24px;
+  border-radius:6px;
+  border:1px solid var(--line);
+  background:var(--chip);
+  color:var(--ink-2);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .18s ease;
+}
+.side-close-btn:hover{
+  background:var(--chip-hover);
+  color:var(--ink);
+  border-color:var(--lime);
+}
+
+/* Active / Hidden visual indicator on the #sideBtn toggle button */
+body.chatpage #sideBtn.is-active{
+  border-color:color-mix(in srgb, var(--lime) 45%, var(--line));
+  color:var(--accent-text);
+  background:color-mix(in srgb, var(--lime) 10%, var(--chip));
+}
+
+body.chatpage .side h3{ font-size:9px; margin-bottom:6px; }
+body.chatpage .side h3 small{ font-size:9.5px; }
+body.chatpage .tele{ gap:6px; }
+body.chatpage .tele div{ padding:6px 4px; border-radius:9px; }
+body.chatpage .tele b{ font-size:13px; }
+body.chatpage .tele span{ font-size:8px; }
+body.chatpage .plays{ gap:2px; }
+body.chatpage .plays button{ padding:7px 8px; border:0; background:transparent; border-radius:8px; font-size:calc(var(--zc-text) - .5px); font-weight:600; }
+body.chatpage .plays button:hover{ background:var(--chip-hover); transform:none; }
+body.chatpage .plays button::before{ width:7px; height:7px; box-shadow:none; }
+body.chatpage .tchips{ gap:4px; }
+body.chatpage .tchip{ padding:3px 8px; font-size:10px; }
+body.chatpage .rules{ padding:9px 10px; border-radius:10px; }
+body.chatpage .rules p{ font-size:10.5px; margin-top:3px; }
+body.chatpage .warn{ font-size:10.5px; padding:7px 9px; }
+
+/* conversation panel */
+body.chatpage .panel{ background:var(--zc-bg); }
+body.chatpage .ptools{ padding:6px 14px; gap:6px; border-bottom:0; min-height:40px; }
+body.chatpage .ptools .pillbtn{ height:28px; padding:0 11px; font-size:10.5px; gap:6px; cursor:pointer; }
+body.chatpage .ptools .pillbtn svg{ width:13px; height:13px; flex:none; }
+body.chatpage .ptools .pillbtn{ flex:none; justify-content:center; }
+body.chatpage .finder{ height:28px; padding:0 11px; }
+body.chatpage .finder input{ font-size:10.5px; width:150px; }
+body.chatpage .finder svg{ width:12px; height:12px; }
+body.chatpage .ptools::after{ content:"Text-to-SQL · {{ n_loaded }}/{{ n_tables }} tables{% if model %} · {{ model }}{% endif %}"; order:5; margin-left:10px; font:600 10px var(--font); color:var(--muted); white-space:nowrap; }
+@media (max-width:1100px){ body.chatpage .ptools::after{ display:none; } }
+
+/* messages: centred column, bot has no bubble (like ChatGPT) */
+body.chatpage .msgs{ padding:10px max(16px, calc((100% - var(--zc-col)) / 2)) 8px; gap:18px; }
+body.chatpage .bubble{ font-size:var(--zc-text); line-height:1.65; padding:0; }
+body.chatpage .bubble.user{ padding:8px 14px; max-width:78%; background:var(--chip); border:1px solid var(--line); border-radius:18px 18px 5px 18px; }
+body.chatpage .bubble.bot{ width:100%; max-width:100%; background:transparent; border:0; border-radius:0; }
+body.chatpage .bubble.bot.err{ padding:8px 12px; border:1px solid color-mix(in srgb, var(--m-cuts) 55%, transparent); border-radius:12px; }
+body.chatpage .bubble .meta{ font-size:9.5px; margin-bottom:4px; padding:0; border:0; }
+body.chatpage .bubble.bot .meta{ justify-content:flex-start; gap:10px; padding-bottom:0; border:0; margin-bottom:6px; }
+body.chatpage .bubble.user .meta{ display:none; }
+body.chatpage .meta .who{ font-size:10.5px; }
+body.chatpage .meta .lat{ font-size:9px; padding:0 6px; }
+body.chatpage .acts{ justify-content:flex-start; border:0; margin-top:6px; padding-top:0; gap:4px; opacity:.55; transition:opacity .2s; }
+body.chatpage .bubble:hover .acts{ opacity:1; }
+body.chatpage .acts button{ font-size:10px; padding:4px 8px; border-radius:7px; }
+body.chatpage .acts button:hover{ background:var(--chip-hover); }
+body.chatpage .acts svg{ width:12px; height:12px; }
+
+/* markdown + tables */
+body.chatpage .md h1, body.chatpage .md h2, body.chatpage .md h3, body.chatpage .md h4{ font-size:calc(var(--zc-text) + 1.5px); margin:12px 0 4px; }
+body.chatpage .md code, body.chatpage .md pre{ font-family:var(--zc-mono); font-size:calc(var(--zc-text) - 1px); }
+body.chatpage .tbar{ padding:5px 8px; font-size:10px; margin-top:6px; border-radius:10px 10px 0 0; }
+body.chatpage .tbar .rows{ font-size:9.5px; padding:2px 8px; }
+body.chatpage .tbar input{ height:24px; width:140px; font-size:10.5px; }
+body.chatpage .tbar button{ height:24px; padding:0 10px; font-size:10px; }
+body.chatpage .twrap{ max-height:60vh; border-radius:0 0 10px 10px; }
+body.chatpage .md table{ font-size:10.5px; }
+body.chatpage .md th{ padding:6px 10px; font-size:10px; }
+body.chatpage .md td{ padding:5px 10px; }
+
+/* In-Chat ECharts Visual & Mini-Dashboard Card */
+.zee-vis-card{
+  background:var(--zc-raise);
+  border:1px solid var(--chip-line);
+  border-radius:14px;
+  padding:14px;
+  margin:6px 0 14px;
+  box-shadow:0 12px 28px -12px rgba(0,0,0,.55);
+}
+.zee-vis-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding-bottom:8px;
+  margin-bottom:10px;
+  border-bottom:1px solid var(--line);
+}
+.zee-vis-tag{ font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--accent-text); }
+.zee-vis-title{ font-size:12px; font-weight:700; color:var(--ink); }
+.zee-vis-btns{ display:flex; gap:5px; }
+.zee-vis-btns button{
+  font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px;
+  border:1px solid var(--chip-line); background:var(--chip); color:var(--ink-2); cursor:pointer;
+}
+.zee-vis-btns button:hover, .zee-vis-btns button.on{
+  border-color:var(--lime); color:var(--accent-text); background:color-mix(in srgb, var(--lime) 12%, var(--chip));
+}
+.zee-vis-kpis{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.zee-vis-kpi{
+  background:var(--mini);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px 10px;
+}
+.zee-vis-kpi small{ display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+.zee-vis-kpi b{ display:block; font-family:var(--zc-mono); font-size:14px; margin-top:2px; }
+.zee-vis-kpi span{ font-family:var(--zc-mono); font-size:9.5px; color:var(--ink-2); }
+.zee-vis-canvas{ width:100%; height:280px; }
+
+/* welcome (centred, no card) */
+body.chatpage .welcome{ align-items:center; }
+body.chatpage .wcard{ background:none; border:0; padding:0; width:min(680px,100%); text-align:center; }
+body.chatpage .whead{ flex-direction:column; align-items:center; gap:8px; border:0; padding:0; }
+body.chatpage .whead b{ font-size:calc(var(--zc-text) + 8px); letter-spacing:-.3px; }
+body.chatpage .whead small{ font-size:10.5px; }
+body.chatpage .whead .ready{ margin:0; font-size:9.5px; padding:2px 10px; }
+body.chatpage .bot-ico{ width:34px; height:34px; border-radius:11px; background:linear-gradient(135deg, var(--lime), color-mix(in srgb, var(--lime) 55%, #3b82f6)); }
+body.chatpage .bot-ico svg{ width:18px; height:18px; }
+body.chatpage .wcard p{ font-size:var(--zc-text); margin:12px auto 0; max-width:560px; }
+body.chatpage .wgrid{ gap:8px; margin-top:16px; text-align:left; }
+body.chatpage .wgrid button{ padding:10px 12px; border-radius:12px; background:var(--zc-raise); }
+body.chatpage .wgrid b{ font-size:11.5px; }
+body.chatpage .wgrid span{ font-size:10.5px; }
+
+/* loading + composer = floating rounded input, like ChatGPT */
+body.chatpage .loading{ padding:0 max(16px, calc((100% - var(--zc-col)) / 2)) 6px; }
+body.chatpage .loading .bubble{ font-size:10.5px; padding:0; }
+body.chatpage .composer{ border:0; padding:6px max(16px, calc((100% - var(--zc-col)) / 2)) 24px; gap:0; position:relative; }
+body.chatpage .inbox textarea{ font-size:var(--zc-text); line-height:1.5; min-height:46px; padding:13px 88px 13px 18px; border-radius:24px; background:var(--zc-raise); border:1px solid var(--chip-line); box-shadow:0 10px 30px -14px rgba(0,0,0,.55); }
+body.chatpage .mic{ right:46px; bottom:8px; width:30px; height:30px; }
+body.chatpage .send{ position:absolute; right:8px; bottom:8px; width:30px; height:30px; min-width:0; padding:0; border-radius:50%; font-size:0; gap:0; display:grid; place-items:center; }
+body.chatpage .send svg{ width:15px; height:15px; margin:0; }
+body.chatpage .composer::after{ content:"Zee Chatbot answers from your live network data (Read-Only Analytics). Verify critical numbers."; position:absolute; left:0; right:0; bottom:6px; text-align:center; font:500 9px var(--font); color:var(--muted); pointer-events:none; }
+
+/* phones / tablets: sidebar becomes a slide-over drawer */
+@media (max-width:1000px){
+  body.chatpage .chat, body.chatpage .chat.noside{ grid-template-columns:minmax(0,1fr) !important; }
+  body.chatpage .side{
+    position:fixed;
+    top:var(--zc-head);
+    left:0;
+    bottom:0;
+    z-index:50;
+    width:270px;
+    background:var(--zc-side);
+    box-shadow:12px 0 32px rgba(0,0,0,.6);
+  }
+  body.chatpage .chat.noside .side{
+    transform:translateX(-105%);
+    opacity:0;
+    pointer-events:none;
+  }
+  body.chatpage .appbar .tabs{ display:none; }
+  body.chatpage .appbar .tools{ margin-left:auto; }
+  body.chatpage .wgrid{ grid-template-columns:1fr; }
+  body.chatpage .bubble.user{ max-width:92%; }
+}
+</style>
+</head>
+<body class="app chatpage">
+<header class="appbar">
+  <div class="in">
+    <div class="row1">
+      {% include "site/_brand.html" %}
+      <nav class="tabs" aria-label="Modules">
+        <a data-nav href="{% url 'dashboards' %}">RCTO Central</a>
+        <a data-nav href="{% url 'grid_report:report' %}">Grid Excellence</a>
+        <a data-nav href="{% url 'chat_agent:chat' %}" class="on" aria-current="page">Zee Chatbot</a>
+      </nav>
+      <div class="tools">
+        <button class="icon-btn" id="fsBtn" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+        <a class="icon-btn" data-nav href="{% url 'home' %}" aria-label="Home" title="Home"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z"/></svg></a>
+        {% include "site/_theme_toggle.html" %}
+      </div>
+    </div>
+    <div class="row2">
+      <span class="glab">Assistant</span>
+      <span class="vchip on" style="cursor:default">Text-to-SQL</span>
+      <span class="count">{{ n_loaded }} of {{ n_tables }} data tables ready{% if model %} · {{ model }}{% endif %}</span>
+    </div>
+  </div>
+</header>
+
+<main class="chat" id="chat" data-api="{% url 'chat_agent:api' %}">
+  <div class="sbk" id="sbk" hidden></div>
+
+  <!-- ===== COLLAPSIBLE SIDEBAR (ACTIVE / HIDE) ===== -->
+  <aside class="side glass" id="side" aria-label="Chat tools">
+    
+    <!-- Sidebar Header with Active Indicator & Close («) Button -->
+    <div class="side-top-bar">
+      <span class="side-title">
+        <i class="side-status-dot"></i>
+        Command Deck
+      </span>
+      <button type="button" class="side-close-btn" id="sideCloseBtn" title="Hide Sidebar (Ctrl+B)" aria-label="Hide Sidebar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      </button>
+    </div>
+
+    <section>
+      <h3>Live telemetry</h3>
+      <div class="tele">
+        <div><b id="stat-queries">0</b><span>Queries</span></div>
+        <div><b id="stat-latency">0.0s</b><span>Latency</span></div>
+        <div><b>{{ n_tables }}</b><span>Tables</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Executive playbooks</h3>
+      <div class="plays">
+        <button type="button" data-prompt="Compare sub-regions by Oct 2026 availability, load shedding, and revenue in a dashboard chart" style="--c:var(--m-avail)">Sub-region KPI dashboard</button>
+        <button type="button" data-prompt="Compare 2025 vs 2026 monthly Availability and Load Shedding with a line chart" style="--c:var(--m-ls)">2025 vs 2026 MoM line chart</button>
+        <button type="button" data-prompt="Compare total complaint counts across CPM, CRR, CRS, and L-3 TAT in a bar chart" style="--c:var(--m-complaints)">RCTO 360° suite comparison</button>
+        <button type="button" data-prompt="Give me a Table and Summary of Grid wise MoM avg avail, ls, data, voice and revenue trends" style="--c:var(--m-ls)">49-grid MoM all-KPI matrix</button>
+        <button type="button" data-prompt="Give me a summary of L-3 TAT complaints by TAT Status and Sub Region" style="--c:var(--m-complaints)">L-3 TAT compliance summary</button>
+        <button type="button" data-prompt="Give me a summary of Customer Satisfaction and IVR Status from rcto_crs_e2e_regions" style="--c:var(--m-ls)">CRS customer satisfaction audit</button>
+        <button type="button" data-prompt="Give me a summary of OFC breaks by RCA and top vendors" style="--c:var(--m-cuts)">OFC fiber cuts &amp; RCA summary</button>
+        <button type="button" data-prompt="Give me Summary of Phase missing 1, 2, and 3 that have status is pending" style="--c:var(--m-complaints)">Pending 2-phase missing audit</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>Connected tables <small>click to try</small></h3>
+      <div class="tchips">
+        {% for t in tables %}<button type="button" class="tchip g{{ t.group }}{% if t.rows is None %} off{% endif %}" data-fill="{{ t.prompt }}" title="{% if t.rows is None %}not loaded{% else %}{{ t.rows }} rows{% endif %}">{{ t.label }}{% if t.rows is not None and forloop.first %} ({{ t.rows }}){% endif %}</button>{% endfor %}
+      </div>
+      {% if n_loaded < n_tables %}<p class="warn">{{ n_tables }} tables expected, {{ n_loaded }} found. Run <code>python upload_rcto_data.py</code> or <code>python manage.py load_chat_data</code>.</p>{% endif %}
+    </section>
+
+    <section class="rules">
+      <h3>Semantic &amp; Guardrail rules</h3>
+      <p><b>Charts &amp; BI</b> Auto ECharts plots &amp; mini-dashboards</p>
+      <p><b>RCTO Suite</b> CPM, CRR, CRS &amp; L-3 TAT comparisons</p>
+      <p><b>Zero-CUD</b> Strict read-only analytics protection</p>
+      <p><b>Entities</b> <code>Central 1..6</code>, <code>FOPs C1</code>, site ids (<code>40024</code>)</p>
+    </section>
+  </aside>
+
+  <!-- ===== conversation ===== -->
+  <section class="panel glass" aria-label="Conversation">
+    <div class="ptools">
+      <button type="button" class="pillbtn is-active" id="sideBtn" aria-expanded="true" aria-controls="side" title="Toggle Sidebar (Ctrl+B)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+        <span id="sideTxt">Hide sidebar</span>
+      </button>
+      <label class="finder"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="chat-search" type="search" placeholder="Filter chat history…" aria-label="Filter chat history"></label>
+      <span class="grow"></span>
+      <button type="button" class="pillbtn" id="exportBtn" title="Download chat report (.md)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg><span class="hide-sm">Export report</span></button>
+      <button type="button" class="pillbtn" id="clearBtn" title="Reset chat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span class="hide-sm">Clear</span></button>
+    </div>
+
+    <div id="chat-box" class="msgs" aria-live="polite">
+      <div id="welcome-hero" class="welcome msg-item">
+        <div class="wcard">
+          <div class="whead">
+            <span class="bot-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.2h5"/></svg></span>
+            <div><b>Zee Chatbot</b><small>Ask your first question below to start chatting</small></div>
+            <span class="ready">{{ n_loaded }} tables ready</span>
+          </div>
+          <p>Ask in plain English for <b>comparative analytics, interactive charts, mini-dashboards, 100+ row tables</b> across network availability, load shedding, the master grid tracker{% if tracker_rows %} ({{ tracker_rows }} sites){% endif %}, OFC breaks, and all 6 RCTO complaint tables (CPM, CRR, CRS, L-3 TAT).</p>
+          <div class="wgrid">
+            <button type="button" data-prompt="Compare 2025 vs 2026 monthly Availability and Load Shedding with a line chart" style="--c:var(--m-avail)"><b>YoY Trend &amp; Plot</b><span>“Compare 2025 vs 2026 Avail &amp; LS line chart”</span></button>
+            <button type="button" data-prompt="Compare total complaint counts across CPM, CRR, CRS, and L-3 TAT in a bar chart" style="--c:var(--m-ls)"><b>RCTO Suite Comparison</b><span>“Compare CPM, CRR, CRS &amp; L-3 TAT in a chart”</span></button>
+            <button type="button" data-prompt="Compare sub-regions by Oct 2026 availability, load shedding, and revenue in a dashboard chart" style="--c:var(--m-complaints)"><b>Sub-Region Dashboard</b><span>“Sub-region Oct 2026 KPI dashboard chart”</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" hidden>
+      <div class="bubble bot"><span class="dots"><i></i><i></i><i></i></span><span id="loading-stage">Routing schema &amp; generating SQL query…</span></div>
+    </div>
+
+    <form id="chat-form" class="composer" autocomplete="off">
+      <div class="inbox">
+        <textarea id="user-input" rows="1" aria-label="Your question" placeholder="Ask for comparisons, charts, mini-dashboards, availability, LS, OFC, or RCTO (CPM/CRR/CRS/TAT)…"></textarea>
+        <button type="button" id="mic-btn" class="mic" title="Voice input" aria-label="Voice input"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <button type="submit" id="send-btn" class="btn btn-primary send">Send<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg></button>
+      </div>
+    </form>
+  </section>
+</main>
+
+{% include "site/_fs.html" %}
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="{% static 'chat_agent/js/chat.js' %}"></script>
+
+<!-- Dedicated Sidebar Active / Hide Controller -->
+<script>
+(function() {
+  const chatEl = document.getElementById('chat');
+  const sideBtn = document.getElementById('sideBtn');
+  const sideCloseBtn = document.getElementById('sideCloseBtn');
+  const sideTxt = document.getElementById('sideTxt');
+  const sbk = document.getElementById('sbk');
+
+  if (!chatEl || !sideBtn) return;
+
+  function syncSidebarUI() {
+    const isHidden = chatEl.classList.contains('noside');
+    sideBtn.setAttribute('aria-expanded', String(!isHidden));
+    sideBtn.classList.toggle('is-active', !isHidden);
+    if (sideTxt) {
+      sideTxt.textContent = isHidden ? 'Show sidebar' : 'Hide sidebar';
+    }
+    if (sbk) {
+      sbk.hidden = isHidden || window.innerWidth > 1000;
+    }
+  }
+
+  function setSidebarHidden(hide) {
+    chatEl.classList.toggle('noside', hide);
+    try {
+      localStorage.setItem('zee_chat_sidebar_hidden', hide ? '1' : '0');
+    } catch (e) {}
+    syncSidebarUI();
+  }
+
+  if (window.innerWidth <= 1000) {
+    chatEl.classList.add('noside');
+  } else {
+    try {
+      if (localStorage.getItem('zee_chat_sidebar_hidden') === '1') {
+        chatEl.classList.add('noside');
+      }
+    } catch (e) {}
+  }
+  syncSidebarUI();
+
+  if (sideCloseBtn) {
+    sideCloseBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      setSidebarHidden(true);
+    });
+  }
+
+  const observer = new MutationObserver(syncSidebarUI);
+  observer.observe(chatEl, { attributes: true, attributeFilter: ['class'] });
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      setSidebarHidden(!chatEl.classList.contains('noside'));
+    }
+  });
+})();
+</script>
+{% if elevenlabs_agent_id %}
+<!-- Floating Voice Call Control Bar: Manual Interrupt + Hardware Mic Mute/Open -->
+<div id="zee-voice-controls" style="position:fixed;right:22px;bottom:92px;z-index:2147482000;display:flex;align-items:center;gap:8px;background:rgba(11,17,22,0.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.14);padding:7px 11px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.65);font-family:'Manrope',sans-serif;">
+  <button type="button" id="zee-mic-toggle" title="Mute or Open Microphone so background noise does not trigger agent" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(63,230,176,0.45);background:rgba(63,230,176,0.16);color:#66f0c3;font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;">
+    <span id="zee-mic-dot" style="width:7px;height:7px;border-radius:50%;background:#3fe6b0;box-shadow:0 0 8px #3fe6b0;"></span>
+    <span id="zee-mic-label">Mic Open</span>
+  </button>
+
+  <button type="button" id="zee-interrupt-btn" title="Interrupt / Stop Agent Speaking" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,111,156,0.45);background:rgba(255,111,156,0.15);color:#ff8fb3;font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>
+    <span>Stop / Interrupt</span>
+  </button>
+</div>
+
+<!-- Voice agent (ElevenLabs): same database as the chat, via query_zee_database -> /chat/voice/query/ -->
+<elevenlabs-convai id="zee-convai-widget" agent-id="{{ elevenlabs_agent_id }}"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+<script>
+(function() {
+  // Capture active WebRTC / getUserMedia microphone streams so we can cleanly Mute / Open on demand
+  const activeMicStreams = [];
+  let isMicMuted = false;
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    const origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async function(constraints) {
+      const stream = await origGetUserMedia(constraints);
+      if (constraints && constraints.audio) {
+        activeMicStreams.push(stream);
+        stream.getAudioTracks().forEach(track => { track.enabled = !isMicMuted; });
+      }
+      return stream;
+    };
+  }
+
+  const micBtn = document.getElementById('zee-mic-toggle');
+  const micDot = document.getElementById('zee-mic-dot');
+  const micLabel = document.getElementById('zee-mic-label');
+  const interruptBtn = document.getElementById('zee-interrupt-btn');
+
+  function applyMicState() {
+    activeMicStreams.forEach(stream => {
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = !isMicMuted;
+      });
+    });
+    if (isMicMuted) {
+      micBtn.style.borderColor = 'rgba(244,63,94,0.55)';
+      micBtn.style.background = 'rgba(244,63,94,0.18)';
+      micBtn.style.color = '#fda4af';
+      micDot.style.background = '#f43f5e';
+      micDot.style.boxShadow = 'none';
+      micLabel.textContent = 'Mic Muted';
+    } else {
+      micBtn.style.borderColor = 'rgba(63,230,176,0.45)';
+      micBtn.style.background = 'rgba(63,230,176,0.16)';
+      micBtn.style.color = '#66f0c3';
+      micDot.style.background = '#3fe6b0';
+      micDot.style.boxShadow = '0 0 8px #3fe6b0';
+      micLabel.textContent = 'Mic Open';
+    }
+  }
+
+  // 1. Toggle Mic Mute / Open
+  if (micBtn) {
+    micBtn.addEventListener('click', function() {
+      isMicMuted = !isMicMuted;
+      applyMicState();
+    });
+  }
+
+  // 2. Interrupt / Stop Agent Speaking immediately & open mic for user
+  if (interruptBtn) {
+    interruptBtn.addEventListener('click', function() {
+      // Stop any browser speech synthesis
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      // Pause all HTML5 audio/video tags (including inside shadow DOM)
+      document.querySelectorAll('audio, video').forEach(el => { try { el.pause(); } catch(e){} });
+      const widget = document.getElementById('zee-convai-widget');
+      if (widget && widget.shadowRoot) {
+        widget.shadowRoot.querySelectorAll('audio, video').forEach(el => { try { el.pause(); } catch(e){} });
+        // Click internal interrupt/stop button inside ElevenLabs widget if present
+        const innerBtns = widget.shadowRoot.querySelectorAll('button');
+        innerBtns.forEach(b => {
+          const lbl = (b.getAttribute('aria-label') || b.innerText || '').toLowerCase();
+          if (lbl.includes('interrupt') || lbl.includes('stop speaking')) {
+            try { b.click(); } catch(e){}
+          }
+        });
+      }
+
+      // Automatically unmute user's mic so they can speak right away after interrupting
+      if (isMicMuted) {
+        isMicMuted = false;
+        applyMicState();
+      }
+
+      // Visual feedback pulse
+      const origText = interruptBtn.innerHTML;
+      interruptBtn.innerHTML = '<span>Interrupted — Speak Now</span>';
+      setTimeout(() => { interruptBtn.innerHTML = origText; }, 1400);
+    });
+  }
+})();
+</script>
+{% endif %}
+</body>
+</html>

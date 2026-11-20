@@ -1,0 +1,7 @@
+:root{
+  --band-95:#0ca30c; --band-90:#3987e5; --band-80:#fab219; --band-0:#d03b3b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+}
+:root[data-theme="dark"] .brand .wm-light,:root:not([data-theme="light"]) .brand .wm-light{display:none}
+:root[data-theme="light"] .brand .wm-dark{display:none}
+.brand .name{display:inline-flex;flex-direction:column;line-height:1.15}

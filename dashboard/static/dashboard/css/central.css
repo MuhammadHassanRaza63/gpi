@@ -1,0 +1,16 @@
+/* Central complaint dashboards (ECharts + ApexCharts): small additions on top of dashboard.css */
+.card .chart { min-width: 0; position: relative; }
+.card .chart > div { max-width: 100%; }
+.card .head h2 { line-height: 1.25; }
+
+/* ApexCharts: toolbar + menu follow the page theme, text uses the page font */
+.apexcharts-canvas, .apexcharts-canvas text, .apexcharts-legend-text { font-family: var(--font) !important; }
+.apexcharts-toolbar { z-index: 3; }
+.apexcharts-menu { background: var(--navy-900) !important; border: 1px solid var(--line) !important; border-radius: 10px !important; color: #fff !important; padding: 4px !important; }
+.apexcharts-menu-item { border-radius: 6px; padding: 6px 12px !important; }
+.apexcharts-menu-item:hover { background: rgba(180, 240, 60, .18) !important; }
+.apexcharts-tooltip { border-radius: 8px !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .4) !important; }
+:root[data-theme="light"] .apexcharts-tooltip.apexcharts-theme-light { background: #fff !important; border: 1px solid rgba(20, 70, 30, .15) !important; }
+.apexcharts-legend-series { cursor: pointer; }
+.apexcharts-datalabel-value, .apexcharts-datalabel-label { font-family: var(--font) !important; }
+.chart-error { padding: 40px; text-align: center; color: var(--muted); }

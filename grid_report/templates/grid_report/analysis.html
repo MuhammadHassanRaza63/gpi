@@ -1,0 +1,1130 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grid Analysis Lab</title>
+{% include "site/_art.html" %}<script src="{% static 'site/js/theme.js' %}"></script>
+<style>
+html{zoom:.90}
+@media (max-width:1000px){html{zoom:1}}
+
+:root{
+  --bg:#0A0F1C; --surface:#111A2E; --surface2:#16213A; --line:#243352;
+  --fg:#E8EDF8; --muted:#93A3C2; --faint:#62749B;
+  --accent:#3987e5; --accent-2:#7C6CFF;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:Calibri,Carlito,'Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F2F5FA; --surface:#FFFFFF; --surface2:#F6F8FC; --line:#DDE4F0;
+    --fg:#0E1A33; --muted:#4E5F7D; --faint:#8795AF; --accent:#2a78d6; --accent-2:#6250d6;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+    --shadow:0 8px 24px rgba(20,40,90,.10); color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#F2F5FA; --surface:#FFFFFF; --surface2:#F6F8FC; --line:#DDE4F0;
+  --fg:#0E1A33; --muted:#4E5F7D; --faint:#8795AF; --accent:#2a78d6; --accent-2:#6250d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --shadow:0 8px 24px rgba(20,40,90,.10); color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px;
+  background-image:radial-gradient(900px 400px at 10% -10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent),radial-gradient(700px 340px at 96% 0%,color-mix(in srgb,var(--accent-2) 12%,transparent),transparent);
+  background-repeat:no-repeat;background-attachment:fixed}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:16px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+
+/* command bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.row1{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;flex:none}
+.brand h1{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+.tools{display:flex;gap:8px;align-items:center}
+.iconbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;height:36px;min-width:36px;padding:0 11px;cursor:pointer;display:inline-flex;gap:7px;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600}
+.iconbtn:hover{color:var(--fg);border-color:var(--faint)}
+.row2{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.glab{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700;margin-right:2px}
+.chip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 11px;cursor:pointer;font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.chip:hover{color:var(--fg);border-color:var(--faint)}
+.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c,var(--accent)) 22%,transparent);border-color:var(--c,var(--accent));color:var(--fg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
+.sep{width:1px;height:20px;background:var(--line)}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+select.field{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:32px;padding:0 10px;font:inherit;font-size:13px}
+input.field{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:32px;padding:0 10px;font:inherit;font-size:13px;width:160px}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:16px;padding:12px 14px 6px;min-width:0;display:flex;flex-direction:column;gap:2px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c) 26%,var(--surface)),var(--surface) 72%);box-shadow:var(--shadow)}
+.kpi .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.kpi .sub{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.kpi .sp{height:44px;margin:0 -6px -4px}
+.up{color:var(--good)} .dn{color:var(--crit)}
+
+/* panels / cards */
+.panel{display:flex;flex-direction:column;gap:16px}
+.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media (max-width:1100px){.c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 12}.c3.half,.c4.half{grid-column:span 6}}
+@media (max-width:640px){.c3.half,.c4.half{grid-column:span 12}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.card>h2{font-size:14px;font-weight:650;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card>h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:500;font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);font-weight:400}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.note{font-size:12.5px;color:var(--muted);margin:2px 0 8px}
+.note b{color:var(--fg);font-weight:600}
+.pill{--c:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);color:var(--fg)}
+.pill b{color:var(--c);font-weight:800}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.sechead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
+.sechead h2{font-size:16px;font-weight:700}
+.sechead span{color:var(--muted);font-size:12.5px}
+
+/* insights */
+.ins{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:16px;padding:14px 16px;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 18%,var(--surface)),var(--surface) 75%)}
+.ins .t{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ins .h{font-size:19px;font-weight:700;margin:3px 0 4px;letter-spacing:-.01em}
+.ins p{font-size:12.5px;color:var(--muted)}
+.ins p b{color:var(--fg)}
+
+/* quadrant tiles */
+.qt{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 45%,var(--line));border-radius:14px;padding:12px 14px;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 80%)}
+.qt .n{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1.1}
+.qt .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.qt .d{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+thead th{position:sticky;top:0;background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;z-index:1}
+thead th:hover{color:var(--fg)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface2)}
+td.num,th.num{text-align:right}
+.scroll{max-height:560px;overflow:auto}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.plot3d{width:100%;height:520px}
+.foot{color:var(--faint);font-size:11.5px;text-align:center;line-height:1.6}
+@media (max-width:560px){.sep{display:none}.count{margin-left:0}input.field{width:100%}}
+
+/* impact tab */
+.imp-bar .note{margin:8px 0 0}
+.imp-hero{--c1:var(--accent);--c2:var(--accent-2);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr);gap:20px;border-radius:20px;padding:22px 24px;border:1px solid color-mix(in srgb,var(--c1) 40%,var(--line));
+  background:radial-gradient(620px 240px at 0% 0%,color-mix(in srgb,var(--c1) 26%,transparent),transparent 70%),radial-gradient(520px 240px at 100% 100%,color-mix(in srgb,var(--c2) 24%,transparent),transparent 70%),var(--surface);box-shadow:var(--shadow)}
+@media (max-width:980px){.imp-hero{grid-template-columns:1fr}}
+.imp-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
+.imp-node{--c:var(--accent);padding:5px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--fg);background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 60%,transparent)}
+.imp-verdict{display:flex;align-items:center;gap:12px;font-size:32px;font-weight:800;letter-spacing:-.02em;margin:14px 0 6px;line-height:1.1}
+.imp-verdict i{width:12px;height:12px;border-radius:50%;background:var(--v);box-shadow:0 0 0 5px color-mix(in srgb,var(--v) 25%,transparent);flex:none}
+.imp-left p{color:var(--muted);font-size:13.5px;max-width:62ch}
+.imp-meta{margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.imp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:center}
+.imp-stat{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 38%,var(--line));border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 20%,var(--surface)),var(--surface) 80%)}
+.imp-stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.imp-stat .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1.15;letter-spacing:-.02em}
+.imp-stat .s{font-size:11.5px;color:var(--muted)}
+.imp-slider{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}
+.imp-slider b{font-size:20px}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;cursor:pointer}
+.imp-out{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 8px}
+.imp-out .imp-stat .v{font-size:21px}
+.tt{padding:8px 11px;font-size:12px;line-height:1.55}.tt span{color:var(--muted)}
+
+/* compact stat cards (short label, one value, one short line) */
+.minis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px}
+.mc{--c:var(--accent);border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));border-radius:14px;padding:10px 14px;min-width:0;display:flex;flex-direction:column;gap:1px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 78%)}
+.mc .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .v{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1.2;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .s{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#p-impact .card{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 94%,var(--accent)),var(--surface))}
+
+:root{
+  --band-95:#0ca30c; --band-90:#3987e5; --band-80:#fab219; --band-0:#d03b3b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+}
+:root[data-theme="dark"] .brand .wm-light,:root:not([data-theme="light"]) .brand .wm-light{display:none}
+:root[data-theme="light"] .brand .wm-dark{display:none}
+.brand .name{display:inline-flex;flex-direction:column;line-height:1.15}
+
+</style>
+<link rel="stylesheet" href="{% static 'grid_report/css/grid-theme.css' %}">
+</head>
+<body>
+<div class="bar"><div class="in">
+  <div class="row1">
+    {% include "grid_report/_brand.html" %}
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-t="overview" aria-selected="true">Overview</button>
+      <button class="tab" role="tab" data-t="impact" aria-selected="false">Impact</button>
+      <button class="tab" role="tab" data-t="pairs" aria-selected="false">Critical pairs</button>
+      <button class="tab" role="tab" data-t="break" aria-selected="false">Breakdown</button>
+      <button class="tab" role="tab" data-t="action" aria-selected="false">Grid actions</button>
+      <button class="tab" role="tab" data-t="three_yr" aria-selected="false">3-Year &amp; Fault Impact</button>
+    </div>
+    <div class="tools">
+      <a class="iconbtn" data-nav href="{% url 'dashboards' %}" style="text-decoration:none" title="RCTO Central dashboards"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V11M12 21V4M19 21v-7"/></svg>RCTO</a>
+      <a class="iconbtn" data-nav href="{% url 'grid_report:report' %}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Dashboard</a>
+      <button class="iconbtn" id="fsBtn" type="button" aria-label="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      <span class="periodchip" id="periodLbl"></span><a class="iconbtn" data-nav href="{% url 'home' %}" aria-label="Home" title="Home"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z"/></svg></a><button type="button" class="iconbtn theme-toggle" data-theme-toggle id="themeBtn" aria-label="Switch theme" title="Switch theme"><svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg><svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7z"/></svg></button>
+    </div>
+  </div>
+  <div class="row2" id="filters"></div>
+</div></div>
+
+<div class="wrap">
+  <section class="kpis" id="kpis" aria-label="Headline KPIs"></section>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="panel" id="p-overview">
+    <div class="minis" id="insights"></div>
+    <div class="grid12">
+      <div class="card c5"><h2>Relationship matrix <em>across grids</em></h2><div id="chHeat"></div></div>
+      <div class="card c7"><h2>Which relationships are strongest?</h2><div id="chPairRank"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ IMPACT (cause -> effect) ============ -->
+  <section class="panel" id="p-impact" hidden>
+    <div class="card imp-bar">
+      <div class="grp"><span class="glab">Cause</span><select class="field" id="selC" aria-label="Cause"></select>
+        <button class="iconbtn" id="swapCE" type="button" title="Swap cause and effect" aria-label="Swap cause and effect">⇄</button>
+        <span class="glab">Effect</span><select class="field" id="selE" aria-label="Effect"></select>
+        <span class="sep"></span><span class="glab">Estimate from</span>
+        <button class="chip" type="button" data-ib="within" aria-pressed="true">Inside each grid</button>
+        <button class="chip" type="button" data-ib="cross" aria-pressed="false">Between grids</button></div>
+    </div>
+    <div class="imp-hero" id="impHero"></div>
+    <div class="minis" id="impInsights"></div>
+    <div class="grid12">
+      <div class="card c7"><h2>Cause vs effect across grids <em>line = fit · dashed = confidence band</em></h2><div id="chImpScatter"></div></div>
+      <div class="card c5"><h2>What-if simulator <em>model estimate</em></h2>
+        <div class="imp-slider"><span class="glab">Change in cause</span><b id="whatVal" class="mono"></b></div>
+        <input type="range" id="whatSlider" aria-label="Change in cause">
+        <div class="imp-out" id="whatOut"></div><div id="chImpResp"></div></div>
+    </div>
+    <div class="sechead"><h2>Timing and trend</h2></div>
+    <div class="grid12">
+      <div class="card c6"><h2>Lead / lag test <em>inside-grid strength by month offset</em></h2><div id="chImpLag"></div></div>
+      <div class="card c6"><h2>Indexed trend, network <em>first month = 100</em></h2><div id="chImpIdx"></div></div>
+    </div>
+    <div class="sechead"><h2>What moves the effect</h2></div>
+    <div class="grid12">
+      <div class="card c6"><h2>Drivers ranked <em>link strength</em></h2><div id="chImpDrv"></div></div>
+      <div class="card c6"><h2>Month-over-month moves <em>network, % change</em></h2><div id="chImpMom"></div></div>
+    </div>
+    <div class="sechead"><h2>Where to act</h2></div>
+    <div class="grid12">
+      <div class="card c6"><h2>Grid momentum <em>trend of cause vs trend of effect</em></h2><div id="chImpQuad"></div></div>
+      <div class="card c6"><h2>Upside from closing the gap <em>per site, top grids</em></h2><div id="chImpTree"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ CRITICAL PAIRS ============ -->
+  <section class="panel" id="p-pairs" hidden>
+    <div id="pairBlocks" class="panel"></div>
+    <div class="sechead"><h2>Pair stability over months</h2></div>
+    <div class="card"><h2>Monthly link strength of the five critical pairs</h2><div id="chMonthR"></div></div>
+    <div class="sechead"><h2>Build your own pair</h2></div>
+    <div class="card">
+      <div class="grp" style="margin-bottom:8px"><span class="glab">X</span><select class="field" id="selX"></select><span class="glab">Y</span><select class="field" id="selY"></select></div>
+      <div class="pills" id="customPills"></div>
+      <div class="note" id="customNote"></div>
+      <div id="chCustom"></div>
+    </div>
+  </section>
+
+  <!-- ============ BREAKDOWN ============ -->
+  <section class="panel" id="p-break" hidden>
+    <div class="sechead"><h2>Sub-region wise</h2></div>
+    <div class="grid12" id="smRow"></div>
+    <div class="card"><h2>Sub-region scorecard</h2><div class="tablewrap"><table id="tblReg"><thead></thead><tbody></tbody></table></div></div>
+
+    <div class="sechead"><h2>Site classification wise</h2></div>
+    <div class="grid12">
+      <div class="card c6"><h2>Availability by power category</h2><div id="chCat"></div></div>
+      <div class="card c6"><h2>Site tier mix by sub-region <em>% of sites</em></h2><div id="chTier"></div></div>
+    </div>
+    <div class="grid12">
+      <div class="card c6"><h2>Premium-tier share vs Availability <em>Platinum+ &amp; Platinum</em></h2><div class="pills" id="pillPA"></div><div id="chPremA"></div></div>
+      <div class="card c6"><h2>Premium-tier share vs Revenue</h2><div class="pills" id="pillPR"></div><div id="chPremR"></div></div>
+    </div>
+
+    <div class="sechead"><h2>Group wise</h2></div>
+    <div class="grid12">
+      <div class="card c5"><h2>Group vs Central average <em>% difference · site-weighted</em></h2><div id="chGroupRadar"></div></div>
+      <div class="card c7"><h2>Group scorecard</h2><div class="tablewrap"><table id="tblGrp"><thead></thead><tbody></tbody></table></div></div>
+    </div>
+    <div class="card">
+      <h2>Grid-wise leaders &amp; laggards <span class="grp" id="gmChips"></span></h2>
+      <div class="grid12">
+        <div class="c6"><div class="note"><b>Best 10</b></div><div id="chBest"></div></div>
+        <div class="c6"><div class="note"><b>Weakest 10</b></div><div id="chWorst"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GRID ACTIONS ============ -->
+  <section class="panel" id="p-action" hidden>
+    <div class="grid12" id="quadTiles"></div>
+    <div class="grid12">
+      <div class="card c7"><h2>Grid quadrants: Availability vs Revenue <em>lines = all-grid medians</em></h2><div id="chQuad"></div></div>
+      <div class="card c5"><h2>Revenue vs what availability predicts <em>% gap · all-grid fit</em></h2><div class="note" id="gapNote"></div><div id="chGap"></div></div>
+    </div>
+    <div class="card"><h2>Grid action list <input class="field" id="q" type="search" placeholder="Search grid…" aria-label="Search grid"></h2>
+      <div class="tablewrap scroll"><table id="tblGrid"><thead></thead><tbody></tbody></table></div></div>
+  </section>
+
+
+  <!-- ============ 3-YEAR & FAULT IMPACT (2024 - 2026) ============ -->
+  <section class="panel" id="p-three_yr" hidden>
+    <div class="card">
+      <div class="grp">
+        <span class="glab">Period metric</span>
+        <select class="field" id="yr3-metric" aria-label="Period metric" style="width:210px">
+          <option value="rev">Revenue / site / mo (PKR)</option>
+          <option value="avl">Cell availability (%)</option>
+          <option value="ls">Load shedding (hrs)</option>
+          <option value="voice">Voice traffic (Erl/site/d)</option>
+          <option value="data">Data traffic (GB/site/d)</option>
+          <option value="fuel">Fuel consumption (L)</option>
+        </select>
+        <span class="sep"></span>
+        <span class="glab">Fault &amp; operational sheet</span>
+        <select class="field" id="yr3-fault-sel" aria-label="Fault sheet" style="width:230px"></select>
+        <span class="count" id="yr3-period-note">2024 (Oct–Dec) · 2025 (Jan–Oct / Full) · 2026 (Jan–Oct)</span>
+      </div>
+    </div>
+
+    <div class="minis" id="yr3-kpis"></div>
+
+    <div class="grid12">
+      <div class="card c7">
+        <h2>25-month trajectory <em>Oct-2024 to Oct-2026 · Tracker 7,342 sites</em></h2>
+        <div id="yr3-trend-chart"></div>
+      </div>
+      <div class="card c5">
+        <h2>Load shedding impact <em>availability &amp; revenue by LS bucket</em></h2>
+        <div id="yr3-impact-chart"></div>
+      </div>
+    </div>
+
+    <div class="sechead"><h2>Sub-region multi-year comparison</h2><span>2024 Q4 vs 2025 Jan–Oct vs 2026 Jan–Oct (syncs with top sub-region filter)</span></div>
+    <div class="card">
+      <h2>Sub-region period scorecard <em>Central-1 to Central-6</em></h2>
+      <div class="tablewrap" id="yr3-region-tbl"></div>
+    </div>
+
+    <div class="sechead"><h2>Classification &amp; fault sheets</h2><span>Site tier impact &amp; all 11 fault/operational workbook sheets</span></div>
+    <div class="grid12">
+      <div class="card c6">
+        <h2>Site classification impact <em>P+, Platinum, Gold, Silver, Bronze</em></h2>
+        <div class="tablewrap" id="yr3-cls-tbl"></div>
+      </div>
+      <div class="card c6">
+        <h2>Fault &amp; operational sheet records <em>selected sheet preview</em></h2>
+        <div class="tablewrap scroll" id="yr3-fault-tbl"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+{{ report_data|json_script:"report-data" }}
+{% include "grid_report/_legend.html" %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.1/apexcharts.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  /* ------------------------------------------------------------------ data */
+  const D = JSON.parse(document.getElementById('report-data').textContent);
+  const R = D.regions, CEN = R[0], REG = R.slice(1), M = D.months, META = D.meta;
+  const REGN = REG.map(r => r.name);
+  const TIERS = ['Platinum +','Platinum','Gold','Silver','Bronze','Strategic','LRS'];
+  const G = D.grids.map(g => {
+    const mix = (g.trk && g.trk.mix) || {};
+    g.mix = mix; g.tot = TIERS.reduce((a,t) => a + (mix[t]||0), 0);
+    g.prem = g.tot ? ((mix['Platinum +']||0) + (mix['Platinum']||0)) / g.tot * 100 : null;
+    return g;
+  });
+
+  /* measures: t = monthly series key, good = +1 higher is better, -1 lower is better */
+  const F = {
+    avl:  {n:'Availability', sh:'Avail',  t:'t_avl',   good:1,  c:'--s1', f:v=>v.toFixed(2)+'%', ax:v=>v.toFixed(1)+'%', step:1,      stepL:'1 pt'},
+    ls:   {n:'Load shedding', sh:'LS', t:'t_ls',    good:-1, c:'--s4', f:v=>v.toFixed(2),     ax:v=>v.toFixed(1),     step:1,      stepL:'1 unit'},
+    voice:{n:'Voice', sh:'Voice',         t:'t_voice', good:1,  c:'--s2', f:v=>v.toFixed(0),     ax:v=>v.toFixed(0),     step:100,    stepL:'100'},
+    data: {n:'Data', sh:'Data',          t:'t_data',  good:1,  c:'--s3', f:v=>v.toFixed(0),     ax:v=>v.toFixed(0),     step:100,    stepL:'100'},
+    rev:  {n:'Revenue', sh:'Revenue',       t:'t_rev',   good:1,  c:'--s5', f:v=>(v/1000).toFixed(0)+'K', ax:v=>(v/1000).toFixed(0)+'K', step:100000, stepL:'100K'},
+    prem: {n:'Premium-tier share', t:null, good:1,  c:'--accent', f:v=>v.toFixed(1)+'%', ax:v=>v.toFixed(0)+'%', step:10, stepL:'10 pts'},
+    sites:{n:'Sites',         t:null,      good:0,  c:'--faint', f:v=>v.toFixed(0), ax:v=>v.toFixed(0), step:10, stepL:'10 sites'}
+  };
+  const MK = ['avl','ls','voice','data','rev'];
+  const fD = (k,v) => k==='rev' ? (v/1000).toFixed(1)+'K' : k==='avl' ? v.toFixed(2)+' pt' : k==='ls' ? v.toFixed(2) : k==='prem' ? v.toFixed(1)+' pts' : v.toFixed(0);
+  const PAIRS = [
+    {id:'avl_rev',  x:'avl',   y:'rev',   t:'Availability vs Revenue'},
+    {id:'data_voice',x:'data', y:'voice', t:'Data vs Voice'},
+    {id:'ls_avl',   x:'ls',    y:'avl',   t:'Load shedding vs Availability'},
+    {id:'avl_data', x:'avl',   y:'data',  t:'Availability vs Data'},
+    {id:'avl_voice',x:'avl',   y:'voice', t:'Availability vs Voice'}
+  ];
+  const GROUPS = [{k:'95-108%',n:'95%+'},{k:'90-95%',n:'90–95%'},{k:'80-90%',n:'80–90%'},{k:'<80%',n:'<80%'}];
+  const TIERCOL = {'Platinum +':'#7C6CFF','Platinum':'#3987e5','Gold':'#c98500','Silver':'#93A3C2','Bronze':'#d95926','Strategic':'#199e70','LRS':'#d55181'};
+  const state = {tab:'overview', region:'All', group:'all', gm:'rev', cx:'avl', cy:'rev', sm:'t_avl', q:'', sort:{k:'rev',d:-1}, rot:false};
+
+  /* ---------------------------------------------------------------- helpers */
+  const $ = id => document.getElementById(id);
+  $('periodLbl').textContent = META.period + ' · ' + META.title.replace(/.*\(/,'').replace(')','');
+  const _FB = {'--accent':'#3987e5','--accent-2':'#7C6CFF','--good':'#0ca30c','--warn':'#fab219','--serious':'#ec835a','--crit':'#d03b3b','--muted':'#93A3C2','--faint':'#62749B','--fg':'#E8EDF8','--surface':'#111A2E','--surface2':'#16213A','--line':'#243352','--band-95':'#0ca30c','--band-90':'#3987e5','--band-80':'#fab219','--band-0':'#d03b3b','--s1':'#3987e5','--s2':'#d95926','--s3':'#199e70','--s4':'#c98500','--s5':'#d55181','--s6':'#008300'};
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || _FB[n] || '#3987e5';
+  const isDark = () => { const t = document.documentElement.getAttribute('data-theme'); return t ? t==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sum = (a,f) => a.reduce((x,y)=>x+f(y),0);
+  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
+  const median = a => { const s=[...a].sort((x,y)=>x-y), n=s.length; return n ? (n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2) : NaN; };
+  const sg = (v,d=2) => (v>0?'+':v<0?'−':'') + Math.abs(v).toFixed(d);
+
+  function linkIndex(x,y){
+    const n=x.length; if(n<3) return NaN;
+    const mx=mean(x), my=mean(y); let sxy=0,sxx=0,syy=0;
+    for(let i=0;i<n;i++){ const a=x[i]-mx, b=y[i]-my; sxy+=a*b; sxx+=a*a; syy+=b*b; }
+    return (sxx && syy) ? sxy/Math.sqrt(sxx*syy) : NaN;
+  }
+  function reg(list,xk,yk){
+    const L = list.filter(g=>g[xk]!=null && g[yk]!=null);
+    const x=L.map(g=>+g[xk]), y=L.map(g=>+g[yk]), idx=linkIndex(x,y);
+    if (isNaN(idx)) return null;
+    const mx=mean(x), my=mean(y); let sxy=0,sxx=0;
+    for(let i=0;i<x.length;i++){ sxy+=(x[i]-mx)*(y[i]-my); sxx+=(x[i]-mx)*(x[i]-mx); }
+    const m=sxy/sxx; return {m, b:my-m*mx, val:idx, fitPct:idx*idx, n:x.length, L};
+  }
+  const strength = v => { const a=Math.abs(v); return a>=.7?'strong':a>=.4?'moderate':a>=.2?'weak':'negligible'; };
+  const dirOf = v => v>0 ? 'positive' : 'negative';
+  const wm = (list,tk,i) => { const L=list.filter(g=>g[tk] && g[tk][i]!=null); const w=sum(L,g=>g.sites); return w ? sum(L,g=>g.sites*g[tk][i])/w : null; };
+  const wavg = (list,k) => { const L=list.filter(g=>g[k]!=null); const w=sum(L,g=>g.sites); return w ? sum(L,g=>g.sites*g[k])/w : null; };
+  const regCol = name => css('--s'+(REGN.indexOf(name)+1));
+  const short = n => n==='Central' ? 'Central' : n.replace('Central-','C');
+  const vis = () => G.filter(g => (state.region==='All' || g.region===state.region) && (state.group==='all' || g.bin===state.group));
+
+  const MED = {avl: median(G.map(g=>g.avl)), rev: median(G.map(g=>g.rev))};
+  const GFIT = reg(G,'avl','rev');
+  G.forEach(g => { g.exp = GFIT.m*g.avl + GFIT.b; g.gap = (g.rev-g.exp)/g.exp*100; });
+  const QUADS = {
+    star:   {n:'Star',    c:'--good',    d:'Availability and revenue both above median'},
+    protect:{n:'Protect', c:'--crit',    d:'High revenue but availability below median: fix first'},
+    grow:   {n:'Grow',    c:'--accent',  d:'Healthy availability, revenue below median: traffic / commercial push'},
+    fix:    {n:'Fix',     c:'--warn',    d:'Below median on both'}
+  };
+  const quadOf = g => g.avl>=MED.avl ? (g.rev>=MED.rev?'star':'grow') : (g.rev>=MED.rev?'protect':'fix');
+  const qpill = q => '<span class="pill" style="--c:var('+QUADS[q].c+')"><b>●</b>'+QUADS[q].n+'</span>';
+
+  /* ---------------------------------------------------------------- charts */
+  const charts = {};
+  function mrg(a,b){
+    if (Array.isArray(b) || b===null || typeof b!=='object') return b===undefined ? a : b;
+    const o = Object.assign({}, a);
+    Object.keys(b).forEach(k => { o[k] = (a && a[k] && typeof a[k]==='object' && !Array.isArray(a[k])) ? mrg(a[k],b[k]) : b[k]; });
+    return o;
+  }
+  function draw(id, opts, lg){
+    const el = $(id); if (!el) return;
+    if (charts[id]) { try { charts[id].destroy(); } catch(e){} delete charts[id]; }
+    el.innerHTML = '';
+    const dark = isDark();
+    const base = {
+      chart:{background:'transparent', toolbar:{show:false}, fontFamily:css('--font'), foreColor:css('--muted'), animations:{enabled:!reduce}, zoom:{enabled:false}},
+      theme:{mode:dark?'dark':'light'},
+      grid:{borderColor:css('--line'), strokeDashArray:3},
+      tooltip:{theme:dark?'dark':'light'},
+      dataLabels:{enabled:false}, legend:{show:false}
+    };
+    const P = GLegend.prep(id, el, opts, lg, () => draw(id, opts, lg), () => charts[id]);
+    const _fo = mrg(base, P.opts); if (Array.isArray(_fo.colors)) { _fo.colors = _fo.colors.map(x => (typeof x === 'string' && x.trim()) ? x : '#3987e5'); } const c = new ApexCharts(el, _fo); charts[id] = c;
+    const r = c.render(); if (r && r.then) r.then(() => P.done(c));
+  }
+  const noData = id => { const el=$(id); const lb=document.getElementById('lg-'+id); if(lb) lb.remove(); if(charts[id]){try{charts[id].destroy()}catch(e){} delete charts[id];} if(el) el.innerHTML = '<div class="empty">No grids match the current filters.</div>'; };
+
+  function scatter(id, list, xk, yk, o){
+    o = o || {};
+    const X=F[xk], Y=F[yk], st = reg(list,xk,yk);
+    const L = list.filter(g=>g[xk]!=null && g[yk]!=null);
+    if (!st) return noData(id);
+    const names = REGN.filter(n => L.some(g=>g.region===n));
+    const series = names.map(n => ({name:n, type:'scatter', data:L.filter(g=>g.region===n).map(g=>({x:+g[xk], y:+g[yk], g:g.name, s:g.sites}))}));
+    const xs = L.map(g=>+g[xk]), ys = L.map(g=>+g[yk]);
+    const x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+    const px=(x1-x0)*.06||1, py=(y1-y0)*.08||1;
+    series.push({name:'Trend', type:'line', data:[{x:x0,y:st.m*x0+st.b},{x:x1,y:st.m*x1+st.b}]});
+    const colors = names.map(regCol).concat([css('--fg')]);
+    const ann = {xaxis:[{x:mean(xs), borderColor:css('--faint'), strokeDashArray:4}], yaxis:[{y:mean(ys), borderColor:css('--faint'), strokeDashArray:4}]};
+    draw(id, {
+      chart:{type:'line', height:o.h||360},
+      series, colors,
+      stroke:{width:names.map(()=>0).concat([2.5]), dashArray:names.map(()=>0).concat([0])},
+      markers:{size:names.map(()=>6).concat([0]), strokeWidth:1, strokeColors:css('--surface'), hover:{sizeOffset:3}},
+      xaxis:{type:'numeric', min:x0-px, max:x1+px, tickAmount:7, title:{text:X.n}, labels:{formatter:v=>X.ax(+v)}, axisBorder:{show:false}},
+      yaxis:{min:y0-py, max:y1+py, tickAmount:6, title:{text:Y.n}, labels:{formatter:v=>Y.ax(+v)}},
+      annotations:ann,
+      legend:{show:true, position:'top', horizontalAlign:'left', markers:{size:6}, showForSingleSeries:false, onItemClick:{toggleDataSeries:true}},
+      tooltip:{shared:false, intersect:true, custom:({seriesIndex,dataPointIndex,w})=>{
+        const p = w.config.series[seriesIndex].data[dataPointIndex]; if(!p||!p.g) return '';
+        const reg_ = w.config.series[seriesIndex].name;
+        return '<div style="padding:8px 10px;font-size:12px"><b>'+esc(p.g)+'</b> <span style="opacity:.7">'+esc(reg_)+'</span><br>'+X.n+': <b>'+X.f(p.x)+'</b><br>'+Y.n+': <b>'+Y.f(p.y)+'</b><br>Sites: '+p.s+'</div>';
+      }}
+    });
+  }
+
+  function statPills(st, extra){
+    if (!st) return '';
+    const c = st.val>0 ? '--s3' : '--s2';
+    return '<span class="pill" style="--c:var('+c+')"><b>'+sg(st.val)+'</b> '+strength(st.val)+' '+dirOf(st.val)+'</span>'
+      + '<span class="pill">Fit <b>'+(st.fitPct*100).toFixed(0)+'%</b></span>'
+      + '<span class="pill">n <b>'+st.n+'</b> grids</span>' + (extra||'');
+  }
+
+  function drawFilters(){
+    const regs = ['All'].concat(REGN);
+    const rc = regs.map(r => '<button class="chip" type="button" data-region="'+r+'" aria-pressed="'+(state.region===r)+'" '+(r==='All'?'':'style="--c:var(--s'+(REGN.indexOf(r)+1)+')"')+'>'+(r==='All'?'':'<i class="dot" style="--c:var(--s'+(REGN.indexOf(r)+1)+')"></i>')+(r==='All'?'All Central':r)+'</button>').join('');
+    const gc = [{k:'all',n:'All'}].concat(GROUPS).map(x => '<button class="chip" type="button" data-group="'+x.k+'" aria-pressed="'+(state.group===x.k)+'">'+x.n+'</button>').join('');
+    const L = vis();
+    $('filters').innerHTML = '<div class="grp"><span class="glab">Sub-region</span>'+rc+'</div><span class="sep"></span><div class="grp"><span class="glab">Grid group</span>'+gc+'</div>'
+      + '<span class="count">'+L.length+' grids · '+L.reduce((a,g)=>a+g.sites,0).toLocaleString('en-US')+' sites</span>';
+  }
+
+  function drawKpis(){
+    const L = vis();
+    $('kpis').innerHTML = MK.map(k => '<div class="kpi" style="--c:var('+F[k].c+')"><span class="lab">'+F[k].n+'</span><span class="val" id="kv-'+k+'">–</span><span class="sub" id="ks-'+k+'"></span><div class="sp" id="ksp-'+k+'"></div></div>').join('');
+    if (!L.length) return;
+    MK.forEach(k => {
+      const ser = M.map((_,i) => wm(L,F[k].t,i));
+      const ix = ser.map((v,i)=>v==null?-1:i).filter(i=>i>=0), nn = ix.map(i=>ser[i]), cur = nn[nn.length-1], prev = nn[nn.length-2], pl = M[ix[ix.length-2]], late = ix[ix.length-1]!==M.length-1 ? ' · '+M[ix[ix.length-1]]+' latest' : '';
+      $('kv-'+k).textContent = F[k].f(cur);
+      if (prev != null && prev !== 0) {
+        const d = (cur-prev)/prev*100, good = d*F[k].good > 0;
+        $('ks-'+k).innerHTML = '<span class="'+(Math.abs(d)<.05?'':(good?'up':'dn'))+'">'+(d>=0?'▲':'▼')+' '+Math.abs(d).toFixed(2)+'%</span> vs '+pl+late;
+      }
+      draw('ksp-'+k, {chart:{type:'area', height:44, sparkline:{enabled:true}}, series:[{name:F[k].n, data:ser}], colors:[css(F[k].c)],
+        stroke:{width:2, curve:'smooth'}, fill:{type:'gradient', gradient:{opacityFrom:.35, opacityTo:0}}, xaxis:{categories:M},
+        tooltip:{x:{show:true}, y:{formatter:v=>F[k].f(v)}}, grid:{padding:{left:0,right:0,top:2,bottom:0}}});
+    });
+  }
+
+  function allPairs(L){
+    const out = [];
+    for (let i=0;i<MK.length;i++) for (let j=i+1;j<MK.length;j++){ const st = reg(L,MK[i],MK[j]); if (st) out.push({a:MK[i], b:MK[j], val:st.val}); }
+    return out.sort((p,q)=>Math.abs(q.val)-Math.abs(p.val));
+  }
+
+  function drawOverview(){
+    const L = vis();
+    if (L.length < 4) { $('insights').innerHTML = '<div class="card c12"><div class="empty">Select at least 4 grids to compute relationships.</div></div>'; noData('chHeat'); noData('chPairRank'); return; }
+    const ps = allPairs(L), top = ps[0], ar = reg(L,'avl','rev'), lr = reg(L,'ls','avl');
+    const protect = L.filter(g=>quadOf(g)==='protect').sort((a,b)=>b.rev-a.rev);
+    const byReg = REGN.map(n => ({n, l:L.filter(g=>g.region===n)})).filter(x=>x.l.length).map(x => ({n:x.n, avl:wavg(x.l,'avl'), rev:wavg(x.l,'rev')}));
+    const lowA = byReg.slice().sort((a,b)=>a.avl-b.avl)[0];
+    const pr_ = reg(L.filter(g=>g.prem!=null),'prem','rev');
+    const cards = [
+      {c:'--accent', t:'Strongest link', v:F[top.a].sh+' ↔ '+F[top.b].sh, s:sg(top.val)+' · '+strength(top.val)},
+      {c:'--s5', t:'Availability → Revenue', v: ar ? 'Fit '+(ar.fitPct*100).toFixed(0)+'%' : '–', s: ar ? sg(ar.val)+' · '+strength(ar.val) : 'n/a'},
+      {c:'--s4', t:'LS → Availability', v: lr ? sg(lr.val) : '–', s: lr ? strength(lr.val)+' '+dirOf(lr.val) : 'n/a'},
+      {c:'--crit', t:'Protect first', v: protect.length+' grid'+(protect.length===1?'':'s'), s: protect.length ? protect.slice(0,2).map(g=>g.name).join(', ')+(protect.length>2?' +'+(protect.length-2):'') : 'none'},
+      {c:'--s3', t:'Revenue driver', v: pr_ ? 'Fit '+(pr_.fitPct*100).toFixed(0)+'%' : '–', s: pr_ ? 'Premium share · '+sg(pr_.val) : 'n/a'},
+      {c:'--warn', t:'Lowest availability', v:lowA.n, s:F.avl.f(lowA.avl)}
+    ];
+    $('insights').innerHTML = cards.map(x => '<div class="mc" style="--c:var('+x.c+')"><span class="l">'+esc(x.t)+'</span><span class="v">'+esc(x.v)+'</span><span class="s">'+esc(x.s)+'</span></div>').join('');
+
+    const series = MK.slice().reverse().map(a => ({name:F[a].sh, data:MK.map(b => ({x:F[b].sh, y: a===b ? 1 : +(reg(L,a,b)||{val:0}).val.toFixed(2)}))}));
+    const HR = [{from:-1,to:-.7,color:'#b03030',name:'strong −'},{from:-.7,to:-.4,color:'#d2603a',name:'moderate −'},{from:-.4,to:-.2,color:'#c98a4a',name:'weak −'},
+      {from:-.2,to:.2,color:'#5b6b8c',name:'~ none'},{from:.2,to:.4,color:'#4a9d86',name:'weak +'},{from:.4,to:.7,color:'#1f9d6a',name:'moderate +'},{from:.7,to:1.01,color:'#0a7d4f',name:'strong +'}];
+    draw('chHeat', {chart:{type:'heatmap', height:340}, series, dataLabels:{enabled:true, style:{colors:['#fff'], fontSize:'12px', fontFamily:css('--mono')}, formatter:v=>v.toFixed(2)},
+      plotOptions:{heatmap:{radius:6, enableShades:false, colorScale:{ranges:HR}}},
+      stroke:{width:2, colors:[css('--surface')]}, grid:{show:false}, xaxis:{labels:{style:{fontSize:'11px'}, rotate:0, hideOverlappingLabels:false}, tooltip:{enabled:false}}},
+      {items:HR.map(r=>({key:r.name, label:r.name, color:r.color})),
+       transform:(o,hid) => mrg(o, {plotOptions:{heatmap:{colorScale:{ranges:HR.map(r=>hid[r.name]?Object.assign({},r,{color:'transparent'}):r)}}},
+         dataLabels:{formatter:v => HR.some(r=>hid[r.name] && v>=r.from && v<r.to) ? '' : v.toFixed(2)}})});
+
+    const pr = ps.slice().sort((p,q)=>Math.abs(q.val)-Math.abs(p.val));
+    draw('chPairRank', {chart:{type:'bar', height:340}, series:[{name:'Index', data:pr.map(p=>+p.val.toFixed(2))}],
+      plotOptions:{bar:{horizontal:true, borderRadius:4, barHeight:'66%', distributed:true}}, colors:pr.map(p=>p.val>=0?css('--s3'):css('--s2')),
+      xaxis:{categories:pr.map(p=>F[p.a].sh+' ↔ '+F[p.b].sh+'   '+sg(p.val)), min:-1, max:1, tickAmount:8, labels:{formatter:v=>(+v).toFixed(1)}},
+      tooltip:{y:{formatter:v=>'Link '+sg(v)}}, annotations:{xaxis:[{x:0, borderColor:css('--faint')}]}},
+      {items:[{key:'pos', label:'Positive', color:css('--s3')},{key:'neg', label:'Negative', color:css('--s2')}], n:pr.length, group:i=>pr[i].val>=0?'pos':'neg'});
+  }
+
+  function dual(id, L, xk, yk){
+    const X=F[xk], Y=F[yk];
+    const sx = M.map((_,i)=>wm(L,X.t,i)), sy = M.map((_,i)=>wm(L,Y.t,i));
+    const ax = (K,s,opp) => ({opposite:opp, title:{text:K.n, style:{color:css(K.c)}}, labels:{style:{colors:css(K.c)}, formatter:v=>K.ax(+v)}, min:Math.min(...s.filter(v=>v!=null))*(K===F.rev||K===F.voice||K===F.data?.97:.998), max:Math.max(...s.filter(v=>v!=null))*(K===F.rev||K===F.voice||K===F.data?1.03:1.002), tickAmount:5});
+    draw(id, {chart:{type:'line', height:360}, series:[{name:X.n, data:sx}, {name:Y.n, data:sy}], colors:[css(X.c), css(Y.c)],
+      stroke:{width:3, curve:'straight'}, markers:{size:4, strokeWidth:0}, xaxis:{categories:M, axisBorder:{show:false}},
+      yaxis:[ax(X,sx,false), ax(Y,sy,true)], legend:{show:true, position:'top', horizontalAlign:'left'},
+      tooltip:{shared:true, intersect:false, y:[{formatter:v=>X.f(v)},{formatter:v=>Y.f(v)}]}});
+  }
+
+  function drawPairs(){
+    const L = vis();
+    $('pairBlocks').innerHTML = PAIRS.map(p =>
+      '<div class="sechead"><h2>'+p.t+'</h2></div><div class="grid12">'
+      + '<div class="card c7"><h2>Grid scatter <em>'+F[p.x].n+' (x) · '+F[p.y].n+' (y)</em></h2><div class="pills" id="pp-'+p.id+'"></div><div id="sc-'+p.id+'"></div></div>'
+      + '<div class="card c5"><h2>Monthly co-movement <em>each axis has its own scale</em></h2><div id="du-'+p.id+'"></div></div></div>').join('');
+    if (L.length < 4) { PAIRS.forEach(p => { noData('sc-'+p.id); noData('du-'+p.id); }); noData('chMonthR'); return; }
+    PAIRS.forEach(p => {
+      const st = reg(L,p.x,p.y);
+      $('pp-'+p.id).innerHTML = statPills(st);
+      scatter('sc-'+p.id, L, p.x, p.y);
+      dual('du-'+p.id, L, p.x, p.y);
+    });
+    const series = PAIRS.map(p => ({name:F[p.x].n+' ↔ '+F[p.y].n, data:M.map((_,i) => {
+      const l = L.filter(g=>g[F[p.x].t] && g[F[p.y].t] && g[F[p.x].t][i]!=null && g[F[p.y].t][i]!=null);
+      const val = linkIndex(l.map(g=>g[F[p.x].t][i]), l.map(g=>g[F[p.y].t][i])); return isNaN(val)?null:+val.toFixed(2); })}));
+    const cols = [css('--s5'), css('--s2'), css('--s4'), css('--s3'), css('--s1')];
+    draw('chMonthR', {chart:{type:'line', height:340}, series, colors:cols, stroke:{width:3, curve:'straight'}, markers:{size:4, strokeWidth:0},
+      legend:{show:true, position:'top', horizontalAlign:'left'}, xaxis:{categories:M, axisBorder:{show:false}}, yaxis:{min:-1, max:1, tickAmount:8, labels:{formatter:v=>(+v).toFixed(1)}, title:{text:'Link strength'}},
+      annotations:{yaxis:[{y:0, borderColor:css('--faint')}]}, tooltip:{shared:true, intersect:false, y:{formatter:v=>v==null?'–':sg(v)}}});
+    drawCustom();
+  }
+
+  function drawCustom(){
+    const L = vis(), xk=state.cx, yk=state.cy;
+    if (!$('selX').options.length){
+      const opts = ['avl','ls','voice','data','rev','prem','sites'].map(k=>'<option value="'+k+'">'+F[k].n+'</option>').join('');
+      $('selX').innerHTML = opts; $('selY').innerHTML = opts;
+    }
+    $('selX').value = xk; $('selY').value = yk;
+    if (xk===yk) { $('customPills').innerHTML=''; $('customNote').textContent='Choose two different measures.'; return noData('chCustom'); }
+    $('customPills').innerHTML = statPills(reg(L,xk,yk));
+    $('customNote').textContent = '';
+    scatter('chCustom', L, xk, yk);
+  }
+
+  function drawBreak(){
+    const rows = [CEN].concat(REG);
+    $('smRow').innerHTML = MK.map(k => '<div class="card c4"><h2>'+F[k].n+(F[k].good<0?' <em>lower is better</em>':'')+'</h2><div id="sm-'+k+'"></div></div>').join('')
+      + '<div class="card c4"><h2>Sites per sub-region</h2><div id="sm-sites"></div></div>';
+    const cols = [css('--faint')].concat(REGN.map(regCol));
+    const ptLegend = (names, colors) => ({items:names.map((n,i)=>({key:n, label:n, color:colors[i]})), n:names.length, group:i=>names[i]});
+    MK.forEach(k => {
+      const vals = rows.map(r=>+r[k]);
+      const min = k==='avl' ? Math.floor((Math.min(...vals)-.3)*2)/2 : 0;
+      draw('sm-'+k, {chart:{type:'bar', height:230}, series:[{name:F[k].n, data:vals}], colors:cols,
+        plotOptions:{bar:{borderRadius:4, columnWidth:'64%', distributed:true, dataLabels:{position:'top'}}}, dataLabels:{enabled:true, formatter:v=>F[k].ax(+v), offsetY:-20, style:{fontSize:'10.5px', fontFamily:css('--mono'), colors:[css('--fg')]}},
+        xaxis:{categories:rows.map(r=>short(r.name)), axisBorder:{show:false}}, yaxis:{min, labels:{formatter:v=>F[k].ax(+v)}},
+        annotations:{yaxis:[{y:+CEN[k], borderColor:css('--faint'), strokeDashArray:4}]}, tooltip:{y:{formatter:v=>F[k].f(+v)}}}, ptLegend(rows.map(r=>short(r.name)), cols));
+    });
+    draw('sm-sites', {chart:{type:'bar', height:230}, series:[{name:'Sites', data:REG.map(r=>+r.sites)}], colors:cols.slice(1),
+      plotOptions:{bar:{borderRadius:4, columnWidth:'64%', distributed:true, dataLabels:{position:'top'}}}, dataLabels:{enabled:true, formatter:v=>Math.round(v).toLocaleString('en-US'), offsetY:-20, style:{fontSize:'10.5px', fontFamily:css('--mono'), colors:[css('--fg')]}},
+      xaxis:{categories:REG.map(r=>short(r.name)), axisBorder:{show:false}}, yaxis:{labels:{formatter:v=>Math.round(v).toLocaleString('en-US')}}}, ptLegend(REG.map(r=>short(r.name)), cols.slice(1)));
+
+    $('tblReg').querySelector('thead').innerHTML = '<tr><th>Sub-region</th><th class="num">Grids</th><th class="num">Sites</th>'+MK.map(k=>'<th class="num">'+F[k].n+'</th>').join('')+'<th class="num">Link (Avail,Rev)</th></tr>';
+    $('tblReg').querySelector('tbody').innerHTML = rows.map(r => {
+      const l = r.name==='Central' ? G : G.filter(g=>g.region===r.name), st = reg(l,'avl','rev');
+      return '<tr><td><b>'+esc(r.name)+'</b></td><td class="num mono">'+l.length+'</td><td class="num mono">'+Math.round(r.sites).toLocaleString('en-US')+'</td>'
+        + MK.map(k=>'<td class="num mono">'+F[k].f(+r[k])+'</td>').join('') + '<td class="num mono">'+(st?sg(st.val)+' <small style="color:var(--faint)">n='+st.n+'</small>':'–')+'</td></tr>';
+    }).join('');
+
+    const cat = [{k:'avl_p',n:'Platinum',c:'--s1'},{k:'avl_g',n:'PGS',c:'--s3'},{k:'avl_s',n:'SB',c:'--s4'},{k:'avl_dg',n:'DG',c:'--s2'}];
+    const cvals = rows.flatMap(r=>cat.map(c=>+r[c.k]));
+    draw('chCat', {legend:{show:true}, chart:{type:'bar', height:320}, series:cat.map(c=>({name:c.n, data:rows.map(r=>+r[c.k])})), colors:cat.map(c=>css(c.c)),
+      plotOptions:{bar:{borderRadius:3, columnWidth:'72%'}}, xaxis:{categories:rows.map(r=>short(r.name)), axisBorder:{show:false}},
+      yaxis:{min:Math.floor(Math.min(...cvals)-.5), labels:{formatter:v=>(+v).toFixed(1)+'%'}, title:{text:'Availability % (axis does not start at 0)'}}, tooltip:{shared:true, intersect:false, y:{formatter:v=>(+v).toFixed(2)+'%'}}});
+
+    const tierRows = REGN.map(n => { const l=G.filter(g=>g.region===n); return {n, t:TIERS.map(t=>sum(l,g=>g.mix[t]||0))}; });
+    tierRows.unshift({n:'Central', t:TIERS.map(t=>sum(G,g=>g.mix[t]||0))});
+    draw('chTier', {chart:{type:'bar', height:320, stacked:true, stackType:'100%'}, series:TIERS.map((t,i)=>({name:t, data:tierRows.map(r=>r.t[i])})), colors:TIERS.map(t=>TIERCOL[t]),
+      plotOptions:{bar:{horizontal:true, barHeight:'68%'}}, xaxis:{categories:tierRows.map(r=>short(r.n)), labels:{formatter:v=>Math.round(v)+'%'}}, stroke:{width:1, colors:[css('--surface')]},
+      legend:{show:true, position:'bottom', fontSize:'11px'}, tooltip:{y:{formatter:v=>Math.round(v).toLocaleString('en-US')+' sites'}}});
+    const L = G.filter(g=>g.prem!=null);
+    $('pillPA').innerHTML = statPills(reg(L,'prem','avl')); $('pillPR').innerHTML = statPills(reg(L,'prem','rev'));
+    scatter('chPremA', L, 'prem', 'avl', {h:320}); scatter('chPremR', L, 'prem', 'rev', {h:320});
+
+    const gl = GROUPS.map(x => ({x, l:G.filter(g=>g.bin===x.k)})).filter(o=>o.l.length);
+    const gcol = [css('--good'), css('--accent'), css('--warn'), css('--crit')];
+    const cen = k => wavg(G,k);
+    draw('chGroupRadar', {chart:{type:'bar', height:340}, series:gl.map(o=>({name:o.x.n, data:MK.map(k=>+((wavg(o.l,k)/cen(k)-1)*100).toFixed(2))})), colors:gcol.slice(0,gl.length),
+      plotOptions:{bar:{borderRadius:3, columnWidth:'74%'}}, xaxis:{categories:MK.map(k=>F[k].sh), axisBorder:{show:false}, labels:{style:{fontSize:'11px'}}},
+      yaxis:{labels:{formatter:v=>sg(+v,1)+'%'}}, legend:{show:true, position:'top', horizontalAlign:'left'}, annotations:{yaxis:[{y:0, borderColor:css('--faint')}]},
+      tooltip:{shared:true, intersect:false, y:{formatter:v=>sg(+v,2)+'% vs Central'}}});
+    $('tblGrp').querySelector('thead').innerHTML = '<tr><th>Group</th><th class="num">Grids</th><th class="num">Sites</th>'+MK.map(k=>'<th class="num">'+F[k].n+'</th>').join('')+'</tr>';
+    $('tblGrp').querySelector('tbody').innerHTML = gl.map(o => '<tr><td><b>'+o.x.n+'</b></td><td class="num mono">'+o.l.length+'</td><td class="num mono">'+sum(o.l,g=>g.sites).toLocaleString('en-US')+'</td>'+MK.map(k=>'<td class="num mono">'+F[k].f(wavg(o.l,k))+'</td>').join('')+'</tr>').join('');
+
+    $('gmChips').innerHTML = '<span class="glab">Measure</span>' + MK.map(k=>'<button class="chip" type="button" data-gm="'+k+'" aria-pressed="'+(state.gm===k)+'" style="--c:var('+F[k].c+')">'+F[k].n+'</button>').join('');
+    const k = state.gm, sorted = vis().filter(g=>g[k]!=null).sort((a,b)=>(b[k]-a[k])*F[k].good);
+    const bar = (id,list,col) => draw(id, {chart:{type:'bar', height:340}, series:[{name:F[k].n, data:list.map(g=>+g[k])}], colors:[col],
+      plotOptions:{bar:{horizontal:true, borderRadius:4, barHeight:'70%'}}, dataLabels:{enabled:true, formatter:v=>F[k].f(+v), style:{fontFamily:css('--mono'), fontSize:'11px'}},
+      xaxis:{categories:list.map(g=>g.name), labels:{formatter:v=>F[k].ax(+v)}, min:k==='avl'?Math.floor(Math.min(...G.map(g=>g.avl))-.5):0}, tooltip:{y:{formatter:v=>F[k].f(+v)}}},
+      {items:[{key:F[k].n, label:F[k].n+(id==='chBest'?' · best 10':' · weakest 10'), color:col, series:[F[k].n]}]});
+    if (!sorted.length) { noData('chBest'); noData('chWorst'); } else { bar('chBest', sorted.slice(0,10), css('--good')); bar('chWorst', sorted.slice(-10).reverse(), css('--serious')); }
+  }
+
+  function drawAction(){
+    const L = vis();
+    const cnt = {star:0, protect:0, grow:0, fix:0}; L.forEach(g => cnt[quadOf(g)]++);
+    $('quadTiles').innerHTML = Object.keys(QUADS).map(q => '<div class="qt c3 half" style="--c:var('+QUADS[q].c+')"><div class="l">'+QUADS[q].n+'</div><div class="n">'+cnt[q]+'</div><div class="d">'+QUADS[q].d+'</div></div>').join('');
+    if (!L.length) { noData('chQuad'); noData('chGap'); $('tblGrid').querySelector('tbody').innerHTML = ''; return; }
+    const qs = Object.keys(QUADS).filter(q=>L.some(g=>quadOf(g)===q));
+    draw('chQuad', {chart:{type:'scatter', height:400}, series:qs.map(q=>({name:QUADS[q].n, data:L.filter(g=>quadOf(g)===q).map(g=>({x:g.avl, y:g.rev, g:g.name}))})), colors:qs.map(q=>css(QUADS[q].c)),
+      markers:{size:7, strokeWidth:1, strokeColors:css('--surface')}, legend:{show:true, position:'top', horizontalAlign:'left'},
+      xaxis:{type:'numeric', tickAmount:7, title:{text:'Availability %'}, labels:{formatter:v=>(+v).toFixed(1)}}, yaxis:{min:Math.floor(Math.min(...L.map(g=>g.rev))/50000)*50000-50000, title:{text:'Revenue'}, labels:{formatter:v=>F.rev.ax(+v)}},
+      annotations:{xaxis:[{x:MED.avl, borderColor:css('--faint'), strokeDashArray:4}], yaxis:[{y:MED.rev, borderColor:css('--faint'), strokeDashArray:4}]},
+      tooltip:{shared:false, intersect:true, custom:({seriesIndex,dataPointIndex,w})=>{ const p=w.config.series[seriesIndex].data[dataPointIndex]; return '<div style="padding:8px 10px;font-size:12px"><b>'+esc(p.g)+'</b><br>Availability: <b>'+F.avl.f(p.x)+'</b><br>Revenue: <b>'+F.rev.f(p.y)+'</b></div>'; }}});
+    $('gapNote').innerHTML = '<div class="pills"><span class="pill">Fit <b>'+(GFIT.fitPct*100).toFixed(1)+'%</b></span><span class="pill">Link <b>'+sg(GFIT.val)+'</b></span><span class="pill">n <b>'+GFIT.n+'</b> grids</span></div>';
+    const gs = L.slice().sort((a,b)=>b.gap-a.gap), pick = gs.length>16 ? gs.slice(0,8).concat(gs.slice(-8)) : gs;
+    draw('chGap', {chart:{type:'bar', height:400}, series:[{name:'Gap', data:pick.map(g=>+g.gap.toFixed(1))}], plotOptions:{bar:{horizontal:true, borderRadius:3, barHeight:'72%', distributed:true}},
+      colors:pick.map(g=>g.gap>=0?css('--s3'):css('--s2')), xaxis:{categories:pick.map(g=>g.name), labels:{formatter:v=>(+v).toFixed(0)+'%'}}, dataLabels:{enabled:true, formatter:v=>sg(v,1)+'%', style:{fontFamily:css('--mono'), fontSize:'10.5px'}},
+      tooltip:{y:{formatter:v=>sg(v,1)+'% vs predicted'}}, annotations:{xaxis:[{x:0, borderColor:css('--faint')}]}},
+      {items:[{key:'up', label:'Above prediction', color:css('--s3')},{key:'dn', label:'Below prediction', color:css('--s2')}], n:pick.length, group:i=>pick[i].gap>=0?'up':'dn'});
+    drawTable(L);
+  }
+  const COLS = [
+    {k:'name', n:'Grid', f:g=>'<b>'+esc(g.name)+'</b>', s:g=>g.name},
+    {k:'region', n:'Sub-region', f:g=>esc(g.region), s:g=>g.region},
+    {k:'sites', n:'Sites', num:1, f:g=>g.sites, s:g=>g.sites},
+    {k:'avl', n:'Avail %', num:1, f:g=>g.avl.toFixed(2), s:g=>g.avl},
+    {k:'ls', n:'LS', num:1, f:g=>g.ls.toFixed(2), s:g=>g.ls},
+    {k:'voice', n:'Voice', num:1, f:g=>g.voice.toFixed(0), s:g=>g.voice},
+    {k:'data', n:'Data', num:1, f:g=>g.data.toFixed(0), s:g=>g.data},
+    {k:'rev', n:'Revenue', num:1, f:g=>F.rev.f(g.rev), s:g=>g.rev},
+    {k:'prem', n:'Premium %', num:1, f:g=>g.prem==null?'–':g.prem.toFixed(0)+'%', s:g=>g.prem==null?-1:g.prem},
+    {k:'gap', n:'Rev vs predicted', num:1, f:g=>'<span class="'+(g.gap>=0?'up':'dn')+'">'+sg(g.gap,1)+'%</span>', s:g=>g.gap},
+    {k:'quad', n:'Action', f:g=>qpill(quadOf(g)), s:g=>quadOf(g)}
+  ];
+  function drawTable(L){
+    L = L || vis();
+    const q = state.q.trim().toLowerCase(), col = COLS.filter(c=>c.k===state.sort.k)[0] || COLS[7];
+    const rows = L.filter(g=>!q || g.name.toLowerCase().indexOf(q)>=0).sort((a,b)=>{ const x=col.s(a), y=col.s(b); return (x<y?-1:x>y?1:0)*state.sort.d; });
+    $('tblGrid').querySelector('thead').innerHTML = '<tr>'+COLS.map(c=>'<th class="'+(c.num?'num':'')+'" data-sort="'+c.k+'">'+c.n+(state.sort.k===c.k?(state.sort.d>0?' ▲':' ▼'):'')+'</th>').join('')+'</tr>';
+    $('tblGrid').querySelector('tbody').innerHTML = rows.map(g=>'<tr>'+COLS.map(c=>'<td class="'+(c.num?'num mono':'')+'">'+c.f(g)+'</td>').join('')+'</tr>').join('') || '<tr><td colspan="'+COLS.length+'"><div class="empty">No grid matches.</div></td></tr>';
+  }
+
+  /* ================================================================ IMPACT: cause -> effect */
+  const IM = {c:'avl', e:'rev', basis:'within', d:null};
+  const crit = df => 1.96 + 2.5/df + 3/(df*df);
+  function ols(x,y,df){
+    const n=x.length; if(n<5) return null;
+    const mx=mean(x), my=mean(y); let sxx=0,sxy=0,syy=0;
+    for(let i=0;i<n;i++){ const a=x[i]-mx, b=y[i]-my; sxx+=a*a; sxy+=a*b; syy+=b*b; }
+    if(!sxx || !syy) return null;
+    const m=sxy/sxx, idx=sxy/Math.sqrt(sxx*syy); df = df>0 ? df : n-2;
+    const s=Math.sqrt(Math.max(0,syy-m*sxy)/df), se=s/Math.sqrt(sxx), cr=crit(df);
+    return {n, m, b:my-m*mx, val:idx, fitPct:idx*idx, se, s, sxx, mx, my, ci:[m-cr*se, m+cr*se], cr, sig:Math.abs(m/se)>cr};
+  }
+  function pairAvg(g,xk,yk){
+    const a=g[F[xk].t], b=g[F[yk].t]; if(!a||!b) return null; const X=[],Y=[];
+    for(let i=0;i<Math.min(a.length,b.length);i++) if(a[i]!=null && b[i]!=null){ X.push(+a[i]); Y.push(+b[i]); }
+    return X.length>=3 ? {x:mean(X), y:mean(Y)} : null;
+  }
+  function cross(list,xk,yk){
+    const pts=[]; list.forEach(g => { const p=pairAvg(g,xk,yk); if(p) pts.push({x:p.x, y:p.y, g:g.name, s:g.sites, region:g.region}); });
+    const st = ols(pts.map(p=>p.x), pts.map(p=>p.y)); return st ? Object.assign(st,{pts}) : null;
+  }
+  function panel(list,xk,yk,lag){
+    const X=[],Y=[]; let grp=0; const A=F[xk].t, B=F[yk].t, ox=Math.max(0,-lag), oy=Math.max(0,lag);
+    list.forEach(g => {
+      const a=g[A], b=g[B]; if(!a||!b) return; const px=[], py=[];
+      for(let i=0; i+ox<a.length && i+oy<b.length; i++){ const u=a[i+ox], v=b[i+oy]; if(u!=null && v!=null){ px.push(+u); py.push(+v); } }
+      if(px.length>=4){ const mx=mean(px), my=mean(py); px.forEach((u,i)=>{ X.push(u-mx); Y.push(py[i]-my); }); grp++; }
+    });
+    const st = ols(X,Y,X.length-grp-1); return st ? Object.assign(st,{grids:grp}) : null;
+  }
+  function trendOf(arr,last){
+    const pts=[]; for(let i=Math.max(0,arr.length-last); i<arr.length; i++) if(arr[i]!=null) pts.push([i,+arr[i]]);
+    if(pts.length<4) return null; const st=ols(pts.map(p=>p[0]), pts.map(p=>p[1])); return st ? {m:st.m, mean:mean(pts.map(p=>p[1]))} : null;
+  }
+  const quant = (a,p) => { const s=[...a].sort((x,y)=>x-y), i=(s.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i); return s[lo]+(s[hi]-s[lo])*(i-lo); };
+  const fBig = v => { const a=Math.abs(v); return (v<0?'−':'') + (a>=1e6 ? (a/1e6).toFixed(2)+'M' : a>=1e3 ? (a/1e3).toFixed(1)+'K' : a.toFixed(a<10?2:0)); };
+  const sgn2 = (k,v) => (v>0?'+':v<0?'−':'') + fD(k,Math.abs(v));
+  const LAGS = [-2,-1,0,1,2];
+  const strengthWord = v => { const a=Math.abs(v); return a>=.7?'strong':a>=.4?'moderate':a>=.2?'weak':'very weak'; };
+
+  function impNoData(msg){
+    $('impHero').innerHTML = '<div class="empty">'+msg+'</div>'; $('impInsights').innerHTML = '';
+    ['chImpScatter','chImpResp','chImpLag','chImpIdx','chImpDrv','chImpMom','chImpQuad','chImpTree'].forEach(noData);
+  }
+
+  function drawImpact(){
+    const L = vis(), c = IM.c, e = IM.e, C = F[c], E = F[e], col1 = css(C.c), col2 = css(E.c);
+    $('selC').value = c; $('selE').value = e;
+    document.querySelectorAll('[data-ib]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ib===IM.basis));
+    if (c===e) return impNoData('Pick two different measures: one as the cause, one as the effect.');
+    if (L.length < 6) return impNoData('Select at least 6 grids (current filters leave '+L.length+') for a meaningful analysis.');
+    const X = cross(L,c,e), W = panel(L,c,e,0);
+    if (!X && !W) return impNoData('Not enough data for this pair.');
+    const lagR = LAGS.map(k => panel(L,c,e,k));
+    let bestI = -1; lagR.forEach((s,i) => { if (s && (bestI<0 || Math.abs(s.val) > Math.abs(lagR[bestI].val))) bestI = i; });
+    const best = bestI>=0 ? lagR[bestI] : null, bestLag = bestI>=0 ? LAGS[bestI] : 0;
+    const S = IM.basis==='within' ? (W||X) : (X||W), Sname = S===W ? 'within-grid' : 'cross-grid';
+    const step = C.step, perStep = S.m*step, ciStep = [S.ci[0]*step, S.ci[1]*step];
+
+    const net = k => M.map((_,i) => wm(L,F[k].t,i));
+    const sC = net(c), sE = net(e);
+    const mom = s => s.map((v,i) => (i && v!=null && s[i-1]!=null && s[i-1]!==0) ? (v/s[i-1]-1)*100 : null);
+    const mC = mom(sC), mE = mom(sE); let same=0, both=0;
+    mC.forEach((v,i) => { if (v!=null && mE[i]!=null && v!==0 && mE[i]!==0){ both++; if ((v>0)===(mE[i]>0)) same++; } });
+    const expectSame = S.m>0;
+    const agree = expectSame ? same : both-same;
+
+    const vW = W ? W.val : null, vX = X ? X.val : null;
+    const sigW = W && W.sig, sigX = X && X.sig, signSame = W && X && (W.m>0)===(X.m>0);
+    let vTitle, vCls;
+    if (sigW && sigX && signSame && Math.max(Math.abs(vW),Math.abs(vX))>=.3){ vTitle='Consistent link'; vCls='--good'; }
+    else if (sigW || sigX){ vTitle='Partial evidence'; vCls='--warn'; }
+    else { vTitle='No reliable link'; vCls='--faint'; }
+    const tile = (l,v,s,c2) => '<div class="imp-stat" style="--c:var('+(c2||'--accent')+')"><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></div>';
+    $('impHero').style.setProperty('--c1', col1); $('impHero').style.setProperty('--c2', col2);
+    $('impHero').innerHTML =
+      '<div class="imp-left"><div class="imp-flow"><span class="imp-node" style="--c:'+col1+'">'+esc(C.n)+'</span><svg width="34" height="18" viewBox="0 0 34 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9h28M23 3l7 6-7 6"/></svg><span class="imp-node" style="--c:'+col2+'">'+esc(E.n)+'</span></div>'
+      + '<div class="imp-verdict" style="--v:var('+vCls+')"><i></i>'+vTitle+'</div>'
+      + '<div class="imp-meta">'+L.length+' grids · '+sum(L,g=>g.sites).toLocaleString('en-US')+' sites · '+M[0]+'–'+M[M.length-1]+'</div></div>'
+      + '<div class="imp-stats">'
+      + tile('Between grids', X ? sg(X.val,2) : '–', X ? 'Fit '+(X.fitPct*100).toFixed(0)+'% · '+strengthWord(X.val)+(X.sig?'':' · not significant') : 'n/a', '--s1')
+      + tile('Inside each grid', W ? sg(W.val,2) : '–', W ? 'Fit '+(W.fitPct*100).toFixed(0)+'% · '+strengthWord(W.val)+(W.sig?'':' · not significant') : 'n/a', '--s3')
+      + tile('Per '+C.stepL+' of '+C.sh, sgn2(e,perStep), Sname+' · range '+sgn2(e,Math.min(...ciStep))+' to '+sgn2(e,Math.max(...ciStep)), '--s5')
+      + tile('Direction match', both ? agree+' / '+both : '–', both ? 'months · '+(expectSame?'together':'oppositely') : 'n/a', '--s4')
+      + '</div>';
+
+    const drivers = MK.filter(k => k!==e).map(k => ({k, w:panel(L,k,e,0), x:cross(L,k,e)})).filter(d => d.w || d.x)
+      .sort((a,b) => Math.abs(b.w?b.w.val:0) - Math.abs(a.w?a.w.val:0));
+    const top = drivers[0];
+
+    const cards = [];
+    cards.push({c:col1, t:'Size of the effect', v:sgn2(e,perStep)+' '+E.sh, s:'Range '+sgn2(e,Math.min(...ciStep))+' to '+sgn2(e,Math.max(...ciStep))});
+    if (top) cards.push({c:css(F[top.k].c), t:'Biggest lever', v:F[top.k].n, s:'in '+(top.w?sg(top.w.val,2):'–')+' · between '+(top.x?sg(top.x.val,2):'–')});
+    if (best) cards.push({c:'#7C6CFF', t:'Timing', v:bestLag===0 ? 'Same month' : bestLag>0 ? C.sh+' leads '+bestLag+' mo' : E.sh+' leads '+(-bestLag)+' mo', s:'Link '+sg(best.val,2)});
+    const trC = L.map(g => trendOf(g[C.t],6)), trE = L.map(g => trendOf(g[E.t],6));
+    let up=0, dn=0, tot=0; L.forEach((g,i) => { if (trC[i] && trE[i]){ tot++; const gc=trC[i].m*C.good, ge=trE[i].m*E.good; if (gc>0 && ge>0) up++; else if (gc<0 && ge<0) dn++; } });
+    cards.push({c:css('--serious'), t:'Momentum · 6 months', v:up+' ↑ · '+dn+' ↓', s:'of '+tot+' grids'});
+    $('impInsights').innerHTML = cards.map(x => '<div class="mc" style="--c:'+x.c+'"><span class="l">'+esc(x.t)+'</span><span class="v">'+esc(x.v)+'</span><span class="s">'+esc(x.s)+'</span></div>').join('');
+
+    if (X){
+      const names = REGN.filter(n => X.pts.some(p=>p.region===n));
+      const xs = X.pts.map(p=>p.x), x0=Math.min(...xs), x1=Math.max(...xs), pad=(x1-x0)*.06||1;
+      const grid = Array.from({length:24},(_,i) => x0-pad + (x1-x0+2*pad)*i/23);
+      const fit = v => X.m*v+X.b, band = v => X.cr*X.s*Math.sqrt(1/X.n + (v-X.mx)*(v-X.mx)/X.sxx);
+      const series = names.map(n => ({name:n, type:'scatter', data:X.pts.filter(p=>p.region===n).map(p=>({x:p.x,y:p.y,g:p.g,s:p.s}))}))
+        .concat([{name:'Fit', type:'line', data:grid.map(v=>({x:v,y:fit(v)}))},{name:'Upper band', type:'line', data:grid.map(v=>({x:v,y:fit(v)+band(v)}))},{name:'Lower band', type:'line', data:grid.map(v=>({x:v,y:fit(v)-band(v)}))}]);
+      draw('chImpScatter', {
+        chart:{type:'line', height:380}, series,
+        colors:names.map(regCol).concat([css('--fg'), css('--faint'), css('--faint')]),
+        stroke:{width:names.map(()=>0).concat([2.5,1,1]), dashArray:names.map(()=>0).concat([0,5,5]), curve:'smooth'},
+        markers:{size:names.map(()=>7).concat([0,0,0]), strokeWidth:2, strokeColors:css('--surface'), hover:{sizeOffset:3}},
+        xaxis:{type:'numeric', min:x0-pad, max:x1+pad, tickAmount:7, title:{text:C.n+' (avg over months)'}, labels:{formatter:v=>C.ax(+v)}, axisBorder:{show:false}},
+        yaxis:{title:{text:E.n}, labels:{formatter:v=>E.ax(+v)}},
+        tooltip:{shared:false, intersect:true, custom:({seriesIndex,dataPointIndex,w}) => { const d=w.config.series[seriesIndex].data[dataPointIndex]; if(!d || !d.g) return '';
+          return '<div class="tt"><b>'+esc(d.g)+'</b><br>'+C.sh+': '+C.f(d.x)+'<br>'+E.sh+': '+E.f(d.y)+'<br><span>'+d.s+' sites</span></div>'; }}
+      }, {items:names.map(n=>({key:n, label:n, color:regCol(n), shape:'dot', series:[n]})).concat([
+          {key:'Fit', label:'Fit', color:css('--fg'), shape:'line', series:['Fit']},
+          {key:'band', label:'Confidence band', color:css('--faint'), shape:'dash', series:['Upper band','Lower band']}])});
+    } else noData('chImpScatter');
+
+    const range = step, sl = $('whatSlider');
+    sl.min = -range; sl.max = range; sl.step = range/40;
+    if (IM.d==null || Math.abs(IM.d)>range) IM.d = range/2;
+    sl.value = IM.d;
+    IM.ctx = {L, S, Sname};
+    drawWhat(L, S, Sname);
+
+    const lagCats = ['−2 mo','−1 mo','Same month','+1 mo','+2 mo'];
+    const lagPts = lagR.map((s,i) => ({x:lagCats[i], y:s ? +s.val.toFixed(3) : null, n:s ? s.n : null}));
+    draw('chImpLag', {
+      chart:{type:'bar', height:290}, series:[{name:'Inside-grid link', data:lagPts}],
+      colors:lagPts.map((p,i) => (p.y!=null && p.y<0 ? css('--s2') : css('--s3')) + (i===bestI ? '' : '88')),
+      plotOptions:{bar:{distributed:true, borderRadius:8, columnWidth:'52%', borderRadiusApplication:'end'}},
+      dataLabels:{enabled:true, formatter:v=>v==null?'':sg(v,2), style:{fontSize:'11px', fontFamily:css('--mono'), colors:[css('--fg')]}, background:{enabled:false}, dropShadow:{enabled:false}, offsetY:-20},
+      xaxis:{type:'category', title:{text:'Offset: + means '+C.sh+' moves first, − means '+E.sh+' moves first'}, axisBorder:{show:false}},
+      yaxis:{min:-1, max:1, tickAmount:4, labels:{formatter:v=>(+v).toFixed(1)}},
+      annotations:{yaxis:[{y:0, borderColor:css('--faint')}]},
+      tooltip:{y:{formatter:(v,o) => { const d=o.w.config.series[0].data[o.dataPointIndex]; return sg(v,3)+(d && d.n ? ' · n='+d.n : ''); }}}
+    }, {items:[{key:'pos', label:'Positive link', color:css('--s3')},{key:'neg', label:'Negative link', color:css('--s2')}], n:lagPts.length, group:i => (lagPts[i].y!=null && lagPts[i].y<0) ? 'neg' : 'pos'});
+
+    const idx = k => { const s=net(k), b=s.find(v=>v!=null); return s.map(v => v==null||!b ? null : +(v/b*100).toFixed(2)); };
+    draw('chImpIdx', {
+      chart:{type:'line', height:290}, series:MK.map(k => ({name:F[k].n, data:idx(k)})),
+      colors:MK.map(k => css(F[k].c)), stroke:{width:MK.map(k => k===c||k===e ? 4 : 1.6), curve:'smooth', dashArray:MK.map(k => k===c||k===e ? 0 : 4)},
+      markers:{size:MK.map(k => k===c||k===e ? 4 : 0), strokeWidth:0},
+      xaxis:{categories:M, axisBorder:{show:false}}, yaxis:{labels:{formatter:v=>(+v).toFixed(1)}, title:{text:M[0]+' = 100'}},
+      legend:{show:true, position:'top', horizontalAlign:'left'}, tooltip:{shared:true, intersect:false, y:{formatter:v=>v==null?'–':v.toFixed(1)}}
+    });
+
+    draw('chImpDrv', {
+      chart:{type:'bar', height:290}, series:[{name:'Inside each grid (monthly)', data:drivers.map(d=>d.w?+d.w.val.toFixed(2):0)},{name:'Between grids (YTD avg)', data:drivers.map(d=>d.x?+d.x.val.toFixed(2):0)}],
+      colors:[css('--s3'), css('--s1')], plotOptions:{bar:{horizontal:true, borderRadius:6, barHeight:'62%', dataLabels:{position:'top'}}},
+      dataLabels:{enabled:true, formatter:v=>sg(v,2), style:{fontSize:'10.5px', fontFamily:css('--mono'), colors:[css('--fg')]}, background:{enabled:false}, dropShadow:{enabled:false}, offsetX:26},
+      xaxis:{categories:drivers.map(d=>F[d.k].n), min:-1, max:1, tickAmount:4, labels:{formatter:v=>(+v).toFixed(1)}},
+      legend:{show:true, position:'top', horizontalAlign:'left'}, tooltip:{y:{formatter:v=>'Link '+sg(v,2)}}
+    });
+
+    draw('chImpMom', {
+      chart:{type:'line', height:290}, series:[{name:C.n+' Δ%', type:'column', data:mC.map(v=>v==null?null:+v.toFixed(2))},{name:E.n+' Δ%', type:'line', data:mE.map(v=>v==null?null:+v.toFixed(2))}],
+      colors:[col1+'cc', col2], stroke:{width:[0,3.5], curve:'smooth'}, markers:{size:[0,5], strokeWidth:2, strokeColors:css('--surface')},
+      plotOptions:{bar:{borderRadius:6, columnWidth:'46%'}},
+      xaxis:{categories:M, axisBorder:{show:false}},
+      yaxis:[{title:{text:C.sh+' Δ% vs previous month', style:{color:col1}}, labels:{formatter:v=>(+v).toFixed(2)+'%'}},{opposite:true, title:{text:E.sh+' Δ%', style:{color:col2}}, labels:{formatter:v=>(+v).toFixed(1)+'%'}}],
+      legend:{show:true, position:'top', horizontalAlign:'left'}, annotations:{yaxis:[{y:0, borderColor:css('--faint')}]},
+      tooltip:{shared:true, intersect:false, y:{formatter:v=>v==null?'–':sg(v,2)+'%'}}
+    });
+
+    const cls = [{n:'Both rising',c:css('--s1')},{n:'Both falling',c:css('--crit')},{n:C.sh+' ↑  '+E.sh+' ↓',c:css('--warn')},{n:C.sh+' ↓  '+E.sh+' ↑',c:'#7C6CFF'}];
+    const mser = cls.map(() => []);
+    L.forEach((g,i) => { const a=trC[i], b=trE[i]; if(!a||!b) return; const ex=b.m/b.mean*100, ix = a.m>=0 ? (ex>=0?0:2) : (ex>=0?3:1); mser[ix].push({x:+a.m.toFixed(4), y:+ex.toFixed(3), g:g.name, s:g.sites}); });
+    if (mser.some(a=>a.length)) draw('chImpQuad', {
+      chart:{type:'scatter', height:340}, series:cls.map((q,i)=>({name:q.n, data:mser[i]})), colors:cls.map(q=>q.c),
+      markers:{size:8, strokeWidth:2, strokeColors:css('--surface'), hover:{sizeOffset:3}},
+      xaxis:{type:'numeric', tickAmount:7, title:{text:C.n+' trend per month'}, labels:{formatter:v=>(+v).toFixed(C.step>=100?0:2)}, axisBorder:{show:false}},
+      yaxis:{title:{text:E.n+' trend, % per month'}, labels:{formatter:v=>(+v).toFixed(1)+'%'}},
+      annotations:{xaxis:[{x:0, borderColor:css('--faint'), strokeDashArray:4}], yaxis:[{y:0, borderColor:css('--faint'), strokeDashArray:4}]},
+      legend:{show:true, position:'top', horizontalAlign:'left'},
+      tooltip:{custom:({seriesIndex,dataPointIndex,w}) => { const d=w.config.series[seriesIndex].data[dataPointIndex]; return '<div class="tt"><b>'+esc(d.g)+'</b><br>'+C.sh+': '+sg(d.x,C.step>=100?0:3)+' / month<br>'+E.sh+': '+sg(d.y,2)+'% / month</div>'; }}
+    }); else noData('chImpQuad');
+
+    const vals = L.map(g => pairAvg(g,c,c)).filter(Boolean).map(p=>p.x);
+    const goalV = quant(vals, C.good>0 ? .75 : .25);
+    const upl = L.map(g => { const p=pairAvg(g,c,c); if(!p) return null; const dl = goalV - p.x; if (dl*C.good<=0) return null; const per = S.m*dl; return {g, dl, per, tot:per*g.sites}; })
+      .filter(o => o && o.tot>0).sort((a,b)=>b.tot-a.tot).slice(0,16);
+    const treeRegs = REGN.filter(n => upl.some(o => o.g.region===n));
+    if (upl.length) draw('chImpTree', {
+      chart:{type:'treemap', height:340}, series:[{data:upl.map(o => ({x:o.g.name, y:+o.tot.toFixed(2), per:o.per, dl:o.dl}))}],
+      colors:upl.map(o => regCol(o.g.region)), plotOptions:{treemap:{distributed:true, enableShades:false, borderRadius:6}},
+      dataLabels:{enabled:true, style:{fontSize:'12px', fontWeight:600}, formatter:(t,o) => { const d=o.w.config.series[o.seriesIndex].data[o.dataPointIndex]; return t+'  '+sgn2(e,d.per); }},
+      stroke:{width:2, colors:[css('--surface')]},
+      tooltip:{y:{formatter:(v,o) => { const d=o.w.config.series[o.seriesIndex].data[o.dataPointIndex]; return 'Close '+sgn2(c,d.dl)+' '+C.sh+' → '+sgn2(e,d.per)+' per site'; }}}
+    }, {items:treeRegs.map(n => ({key:n, label:n, color:regCol(n)})), n:upl.length, group:i => upl[i].g.region}); else { noData('chImpTree'); }
+  }
+
+  function drawWhat(L, S, Sname){
+    const c=IM.c, e=IM.e, C=F[c], E=F[e], d=+IM.d, per=S.m*d, lo=Math.min(S.ci[0]*d,S.ci[1]*d), hi=Math.max(S.ci[0]*d,S.ci[1]*d);
+    const sites = sum(L,g=>g.sites), perSiteMeasure = (e==='rev'||e==='voice'||e==='data');
+    $('whatVal').textContent = sgn2(c,d)+' '+C.sh;
+    $('whatOut').innerHTML =
+      '<div class="imp-stat" style="--c:var('+E.c+')"><span class="l">Per site</span><span class="v">'+sgn2(e,per)+'</span><span class="s">Range '+sgn2(e,lo)+' to '+sgn2(e,hi)+'</span></div>'
+      + '<div class="imp-stat" style="--c:var('+E.c+')"><span class="l">'+(perSiteMeasure ? 'Network total' : 'Network average')+'</span><span class="v">'+(perSiteMeasure ? (per>=0?'+':'−')+fBig(Math.abs(per*sites)) : sgn2(e,per))+'</span><span class="s">'+(perSiteMeasure ? 'all '+sites.toLocaleString('en-US')+' sites · per month' : 'site-weighted')+'</span></div>';
+    const R0 = +$('whatSlider').max, pts = Array.from({length:41},(_,i) => -R0 + 2*R0*i/40);
+    draw('chImpResp', {
+      chart:{type:'area', height:210}, series:[{name:'Estimate', data:pts.map(v=>({x:v,y:S.m*v}))},{name:'Upper range', data:pts.map(v=>({x:v,y:Math.max(S.ci[0]*v,S.ci[1]*v)}))},{name:'Lower range', data:pts.map(v=>({x:v,y:Math.min(S.ci[0]*v,S.ci[1]*v)}))}],
+      colors:[css(E.c), css('--faint'), css('--faint')], stroke:{width:[3,1,1], dashArray:[0,5,5], curve:'straight'},
+      fill:{type:['gradient','solid','solid'], opacity:[1,0,0], gradient:{shadeIntensity:1, opacityFrom:.35, opacityTo:.02, stops:[0,100]}},
+      xaxis:{type:'numeric', tickAmount:4, labels:{formatter:v=>(+v>0?'+':'')+C.ax(+v).replace('%','')}, title:{text:'Change in '+C.sh}, axisBorder:{show:false}},
+      yaxis:{labels:{formatter:v=>E.ax(+v)}, title:{text:'Change in '+E.sh+' / site'}},
+      annotations:{xaxis:[{x:d, borderColor:css(C.c), strokeDashArray:0, label:{text:sgn2(c,d), orientation:'horizontal', borderWidth:0, style:{color:'#fff', background:css(C.c), fontSize:'11px'}}}], yaxis:[{y:0, borderColor:css('--faint')}]},
+      tooltip:{shared:true, intersect:false, x:{formatter:v=>sgn2(c,v)}, y:{formatter:v=>sgn2(e,v)}}
+    }, {items:[{key:'est', label:'Estimate', color:css(E.c), shape:'line', series:['Estimate']},{key:'band', label:'Estimate range', color:css('--faint'), shape:'dash', series:['Upper range','Lower range']}]});
+  }
+
+  MK.forEach(k => { ['selC','selE'].forEach(id => { const o=document.createElement('option'); o.value=k; o.textContent=F[k].n; $(id).appendChild(o); }); });
+  $('selC').addEventListener('change', e => { IM.c = e.target.value; IM.d = null; drawImpact(); });
+  $('selE').addEventListener('change', e => { IM.e = e.target.value; IM.d = null; drawImpact(); });
+  $('swapCE').addEventListener('click', () => { const t=IM.c; IM.c=IM.e; IM.e=t; IM.d=null; drawImpact(); });
+  document.querySelectorAll('[data-ib]').forEach(b => b.addEventListener('click', () => { IM.basis=b.dataset.ib; IM.d=null; drawImpact(); }));
+  let whatRaf = 0;
+  $('whatSlider').addEventListener('input', e => { IM.d = +e.target.value; if (!IM.ctx) return; cancelAnimationFrame(whatRaf); whatRaf = requestAnimationFrame(() => drawWhat(IM.ctx.L, IM.ctx.S, IM.ctx.Sname)); });
+
+  const TABS = ['overview','impact','pairs','break','action','three_yr'];
+  function setTab(t){
+    state.tab = t;
+    TABS.forEach(x => { $('p-'+x).hidden = x!==t; });
+    document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t===t));
+    try { history.replaceState(null,'','#'+t); } catch(e){}
+    drawTab();
+  }
+  function drawTab(){
+    if (state.tab==='overview') drawOverview();
+    else if (state.tab==='impact') drawImpact();
+    else if (state.tab==='pairs') drawPairs();
+    else if (state.tab==='break') drawBreak();
+    else if (state.tab==='action') drawAction();
+    else if (state.tab==='three_yr') drawThreeYr();
+  }
+  function renderAll(){ drawFilters(); drawKpis(); drawTab(); }
+
+  $('tabs').addEventListener('click', e => { const b=e.target.closest('.tab'); if (b) setTab(b.dataset.t); });
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-region],[data-group],[data-gm],[data-sm],[data-sort]'); if (!c) return;
+    if (c.dataset.region) { state.region = c.dataset.region; renderAll(); }
+    else if (c.dataset.group) { state.group = c.dataset.group; renderAll(); }
+    else if (c.dataset.gm) { state.gm = c.dataset.gm; drawBreak(); }
+    else if (c.dataset.sort) { const k=c.dataset.sort; state.sort = {k, d: state.sort.k===k ? -state.sort.d : (k==='name'||k==='region'||k==='quad' ? 1 : -1)}; drawTable(); }
+  });
+  $('selX').addEventListener('change', e => { state.cx = e.target.value; drawCustom(); });
+  $('selY').addEventListener('change', e => { state.cy = e.target.value; drawCustom(); });
+  $('q').addEventListener('input', e => { state.q = e.target.value; drawTable(); });
+  new MutationObserver(()=>{ renderAll(); }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  window.addEventListener('hashchange', () => { const h=(location.hash||'').replace('#',''); if (TABS.indexOf(h)>=0 && h!==state.tab) setTab(h); });
+
+  const h0 = (location.hash||'').replace('#','');
+  if (TABS.indexOf(h0)>=0) state.tab = h0;
+  TABS.forEach(x => { $('p-'+x).hidden = x!==state.tab; });
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t===state.tab));
+  renderAll();
+})();
+</script>
+{% include "grid_report/_fs.html" %}
+<script src="{% static 'site/js/chart-export.js' %}"></script>
+</body>
+</html>
+
+<script id="multi-year-json-data" type="application/json">{"source_json": "Network_KPI_Reports_Grid_Excellence.json", "source_workbook": "Network_KPI_Reports_-_Grid_Excellence_v1.xlsb", "total_sites": 7342, "period_note": "2024 covers Oct-Dec 2024 (Q4-24); 2025 covers Jan-Dec 2025 (with Jan-Oct 2025 YoY window); 2026 covers Jan-Oct 2026.", "timeline_25m": {"labels": ["Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25", "Apr-25", "May-25", "Jun-25", "Jul-25", "Aug-25", "Sep-25", "Oct-25", "Nov-25", "Dec-25", "Jan-26", "Feb-26", "Mar-26", "Apr-26", "May-26", "Jun-26", "Jul-26", "Aug-26", "Sep-26", "Oct-26"], "availability": [98.4314, 98.708, 98.7604, 98.7988, 98.519, 99.009, 98.8662, 97.2103, 98.0433, 97.3212, 97.9631, 98.1845, 98.3626, 98.7783, 98.5364, 98.2277, 99.0734, 98.9424, 97.4859, 98.1796, 97.7431, 98.0063, 98.3281, 98.7673, 98.9331], "load_shedding": [3.2638, 3.5863, 3.585, 3.56, 3.5757, 2.9221, 3.0479, 3.4277, 2.9744, 3.2628, 3.0417, 3.0478, 3.2032, 3.1631, 3.3165, 3.7308, 3.6759, 3.355, 4.3133, 3.5599, 3.6862, 3.7358, 3.7502, 3.6185, 3.5464], "voice_erl": [673.2116, 671.4016, 651.8686, 654.9803, 679.3772, 652.8223, 674.5781, 656.2783, 624.6603, 600.7737, 603.4248, 620.7015, 622.8578, 611.6131, 609.6519, 610.9805, 630.171, 612.1126, 656.8401, 634.9245, 598.3127, 592.2163, 588.8451, 600.3995, 598.7988], "data_gb": [855.8291, 865.7391, 862.9925, 903.3537, 932.7911, 884.205, 899.6984, 919.1755, 940.9465, 940.7115, 967.1697, 972.8723, 966.086, 981.3027, 1008.9431, 1008.6475, 1014.4515, 1048.3167, 986.8744, 982.5556, 971.4814, 978.9995, 972.0385, 962.1457, 950.5189], "revenue_pkr": [703169.462, 716012.9465, 724663.842, 758012.0402, 780723.9734, 798193.0991, 791796.5685, 790289.4991, 839947.7485, 824864.3638, 798461.0698, 804508.9784, 796891.1444, 802818.4983, 837982.5596, 875353.7671, 892467.6329, 936275.9334, 908378.8733, 901526.1348, 884675.1347, 884970.5485, 881714.8324, 879250.6268, 892195.3444], "fuel_l": [158.2421, 143.8019, 161.517, 156.3805, 149.4063, 127.7882, 125.8425, 183.9366, 156.2235, 198.3581, 176.6702, 161.5774, 159.6872, 125.6414, 152.3819, 193.4802, 126.5211, 134.7323, 188.6145, 158.0473, 169.1651, 196.3543, 181.9622, 156.1507, 131.5179]}, "regions_3yr": [{"subregion": "Central-1", "sites": 1224, "avl_2024_q4": 98.8873, "avl_2025_full": 98.5435, "avl_2025_jan_oct": 98.5752, "avl_2026_jan_oct": 98.463, "ls_2024_q4": 2.8024, "ls_2025_full": 3.0115, "ls_2025_jan_oct": 2.8521, "ls_2026_jan_oct": 3.6249, "voice_2024_q4": 568.2849, "voice_2025_full": 543.7975, "voice_2025_jan_oct": 548.4532, "voice_2026_jan_oct": 502.7973, "data_2024_q4": 640.3017, "data_2025_full": 699.6739, "data_2025_jan_oct": 691.87, "data_2026_jan_oct": 736.3099, "rev_2024_q4": 716766.9276, "rev_2025_full": 782602.9999, "rev_2025_jan_oct": 777067.4097, "rev_2026_jan_oct": 865833.013, "fuel_2024_q4": 145.7557, "fuel_2025_full": 147.7979, "fuel_2025_jan_oct": 153.076, "fuel_2026_jan_oct": 153.2379, "units_2024_q4": 2912.2641, "units_2025_full": 3295.2111, "units_2025_jan_sep": 3382.6743, "units_2026_jan_sep": 3120.5383}, {"subregion": "Central-2", "sites": 1514, "avl_2024_q4": 98.331, "avl_2025_full": 98.209, "avl_2025_jan_oct": 98.0812, "avl_2026_jan_oct": 98.2755, "ls_2024_q4": 3.2342, "ls_2025_full": 2.8804, "ls_2025_jan_oct": 2.883, "ls_2026_jan_oct": 3.4452, "voice_2024_q4": 691.9177, "voice_2025_full": 682.7708, "voice_2025_jan_oct": 685.0725, "voice_2026_jan_oct": 700.5131, "data_2024_q4": 789.2881, "data_2025_full": 875.5376, "data_2025_jan_oct": 866.8046, "data_2026_jan_oct": 915.3624, "rev_2024_q4": 637455.7241, "rev_2025_full": 723128.8794, "rev_2025_jan_oct": 720670.1994, "rev_2026_jan_oct": 826759.2354, "fuel_2024_q4": 113.1158, "fuel_2025_full": 102.6076, "fuel_2025_jan_oct": 107.0159, "fuel_2026_jan_oct": 121.8771, "units_2024_q4": 2141.8648, "units_2025_full": 3426.2662, "units_2025_jan_sep": 3421.3267, "units_2026_jan_sep": 3448.7676}, {"subregion": "Central-3", "sites": 1778, "avl_2024_q4": 98.7265, "avl_2025_full": 98.4704, "avl_2025_jan_oct": 98.4216, "avl_2026_jan_oct": 98.5936, "ls_2024_q4": 3.2349, "ls_2025_full": 3.0078, "ls_2025_jan_oct": 3.0137, "ls_2026_jan_oct": 3.3492, "voice_2024_q4": 721.3307, "voice_2025_full": 662.5498, "voice_2025_jan_oct": 667.0787, "voice_2026_jan_oct": 656.1592, "data_2024_q4": 1010.1722, "data_2025_full": 1087.108, "data_2025_jan_oct": 1075.859, "data_2026_jan_oct": 1174.405, "rev_2024_q4": 729124.1058, "rev_2025_full": 816962.5993, "rev_2025_jan_oct": 809984.3492, "rev_2026_jan_oct": 937827.7309, "fuel_2024_q4": 140.6776, "fuel_2025_full": 136.7953, "fuel_2025_jan_oct": 137.4821, "fuel_2026_jan_oct": 153.6814, "units_2024_q4": 2169.4867, "units_2025_full": 3647.5928, "units_2025_jan_sep": 3658.0979, "units_2026_jan_sep": 3770.3261}, {"subregion": "Central-4", "sites": 823, "avl_2024_q4": 98.9554, "avl_2025_full": 98.6753, "avl_2025_jan_oct": 98.6516, "avl_2026_jan_oct": 98.8153, "ls_2024_q4": 2.9702, "ls_2025_full": 2.5558, "ls_2025_jan_oct": 2.5722, "ls_2026_jan_oct": 3.2909, "voice_2024_q4": 710.0445, "voice_2025_full": 654.6419, "voice_2025_jan_oct": 658.1234, "voice_2026_jan_oct": 639.2785, "data_2024_q4": 943.8443, "data_2025_full": 1020.0649, "data_2025_jan_oct": 1011.0217, "data_2026_jan_oct": 1071.3668, "rev_2024_q4": 700532.8236, "rev_2025_full": 781146.532, "rev_2025_jan_oct": 770568.622, "rev_2026_jan_oct": 881879.5726, "fuel_2024_q4": 112.1358, "fuel_2025_full": 134.2997, "fuel_2025_jan_oct": 137.8276, "fuel_2026_jan_oct": 142.4085, "units_2024_q4": 1664.5986, "units_2025_full": 3507.4694, "units_2025_jan_sep": 3494.701, "units_2026_jan_sep": 3585.4271}, {"subregion": "Central-5", "sites": 1330, "avl_2024_q4": 98.662, "avl_2025_full": 97.7983, "avl_2025_jan_oct": 97.6365, "avl_2026_jan_oct": 97.9255, "ls_2024_q4": 4.4131, "ls_2025_full": 3.8893, "ls_2025_jan_oct": 3.9862, "ls_2026_jan_oct": 3.9508, "voice_2024_q4": 599.5169, "voice_2025_full": 550.1474, "voice_2025_jan_oct": 558.0581, "voice_2026_jan_oct": 495.7269, "data_2024_q4": 872.6075, "data_2025_full": 941.2214, "data_2025_jan_oct": 933.6654, "data_2026_jan_oct": 959.0735, "rev_2024_q4": 768100.277, "rev_2025_full": 843593.6742, "rev_2025_jan_oct": 839939.9753, "rev_2026_jan_oct": 886962.5609, "fuel_2024_q4": 167.162, "fuel_2025_full": 172.0178, "fuel_2025_jan_oct": 179.8728, "fuel_2026_jan_oct": 189.1686, "units_2024_q4": 1985.4937, "units_2025_full": 3680.5575, "units_2025_jan_sep": 3692.7419, "units_2026_jan_sep": 3661.8238}, {"subregion": "Central-6", "sites": 673, "avl_2024_q4": 98.0971, "avl_2025_full": 97.9758, "avl_2025_jan_oct": 97.9817, "avl_2026_jan_oct": 98.105, "ls_2024_q4": 4.7278, "ls_2025_full": 4.7482, "ls_2025_jan_oct": 4.5547, "ls_2026_jan_oct": 5.4995, "voice_2024_q4": 693.0736, "voice_2025_full": 690.7002, "voice_2025_jan_oct": 694.5538, "voice_2026_jan_oct": 663.7729, "data_2024_q4": 883.5391, "data_2025_full": 950.6349, "data_2025_jan_oct": 943.1859, "data_2026_jan_oct": 1006.6509, "rev_2024_q4": 748661.8056, "rev_2025_full": 820965.0237, "rev_2025_jan_oct": 816596.0294, "rev_2026_jan_oct": 932022.2602, "fuel_2024_q4": 222.3507, "fuel_2025_full": 230.3788, "fuel_2025_jan_oct": 236.5808, "fuel_2026_jan_oct": 207.396, "units_2024_q4": 2083.1661, "units_2025_full": 3860.7892, "units_2025_jan_sep": 3975.5819, "units_2026_jan_sep": 4051.8031}], "ls_impact_buckets": [{"bucket": "<=2.0h LS", "sites": 1277, "avg_ls": 1.713, "avg_avl": 99.151, "avg_rev_pkr": 869477.37, "rev_loss_sites_100k": 6, "voice_loss_sites_100erl": 3, "data_loss_sites_100gb": 23}, {"bucket": "2.0-3.5h LS", "sites": 3784, "avg_ls": 2.673, "avg_avl": 98.484, "avg_rev_pkr": 819611.11, "rev_loss_sites_100k": 35, "voice_loss_sites_100erl": 23, "data_loss_sites_100gb": 83}, {"bucket": "3.5-5.0h LS", "sites": 1303, "avg_ls": 4.052, "avg_avl": 97.799, "avg_rev_pkr": 793263.37, "rev_loss_sites_100k": 19, "voice_loss_sites_100erl": 9, "data_loss_sites_100gb": 39}, {"bucket": ">5.0h LS", "sites": 967, "avg_ls": 8.419, "avg_avl": 97.6, "avg_rev_pkr": 769383.7, "rev_loss_sites_100k": 10, "voice_loss_sites_100erl": 13, "data_loss_sites_100gb": 32}], "classification_impact": [{"classification": "Bronze", "sites": 524, "rev_2024_q4": 256003.51, "rev_2025_jan_oct": 266059.05, "rev_2026_jan_oct": 405117.4, "avl_2024_q4": 97.438, "avl_2025_jan_oct": 96.867, "avl_2026_jan_oct": 97.574}, {"classification": "Gold", "sites": 2582, "rev_2024_q4": 654227.33, "rev_2025_jan_oct": 714567.08, "rev_2026_jan_oct": 821984.32, "avl_2024_q4": 98.797, "avl_2025_jan_oct": 98.393, "avl_2026_jan_oct": 98.555}, {"classification": "LRS", "sites": 57, "rev_2024_q4": 141598.42, "rev_2025_jan_oct": 136671.75, "rev_2026_jan_oct": 200621.87, "avl_2024_q4": 94.776, "avl_2025_jan_oct": 94.916, "avl_2026_jan_oct": 96.201}, {"classification": "P+", "sites": 510, "rev_2024_q4": 1409587.82, "rev_2025_jan_oct": 1653808.73, "rev_2026_jan_oct": 1942705.01, "avl_2024_q4": 98.82, "avl_2025_jan_oct": 98.444, "avl_2026_jan_oct": 98.652}, {"classification": "Platinum", "sites": 1814, "rev_2024_q4": 950585.3, "rev_2025_jan_oct": 1063950.98, "rev_2026_jan_oct": 1200350.37, "avl_2024_q4": 98.861, "avl_2025_jan_oct": 98.527, "avl_2026_jan_oct": 98.574}, {"classification": "Silver", "sites": 1706, "rev_2024_q4": 420017.37, "rev_2025_jan_oct": 457041.51, "rev_2026_jan_oct": 530454.6, "avl_2024_q4": 98.391, "avl_2025_jan_oct": 97.847, "avl_2026_jan_oct": 98.089}, {"classification": "Strategic", "sites": 149, "rev_2024_q4": 399970.0, "rev_2025_jan_oct": 423902.6, "rev_2026_jan_oct": 504468.13, "avl_2024_q4": 97.706, "avl_2025_jan_oct": 97.955, "avl_2026_jan_oct": 98.105}], "fault_sheets": [{"sheet": "Not Operational DGs", "row_count": 91, "columns": ["NAME", "DG ENGINE SERIAL NUMBER", "DG CURRENT SITE", "DG PREVIOUS SITE", "ASSET CODE", "Subregion", "Grid", "DG BRAND", "DG ENGINE MAKE", "DG RATING", "OPERATIONAL STATUS", "MOH Site A", "MOH TT Status", "MOH Completion Date", "Remarks Category", "Current Status"], "sample_records": [{"NAME": 43382, "DG ENGINE SERIAL NUMBER": "GN65732U952816S", "DG CURRENT SITE": 43382, "DG PREVIOUS SITE": 7095, "Subregion": "Central-3", "Grid": "C3007", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4356, "DG ENGINE SERIAL NUMBER": "935287S", "DG CURRENT SITE": 4356, "DG PREVIOUS SITE": 40911, "ASSET CODE": "CM0175402", "Subregion": "Central-6", "Grid": "C6003", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4131, "DG ENGINE SERIAL NUMBER": "U149847P", "DG CURRENT SITE": 4131, "DG PREVIOUS SITE": 7910, "ASSET CODE": "CM0350273", "Subregion": "Central-1", "Grid": "C1003", "DG BRAND": "IMPAC", "DG ENGINE MAKE": "Perkins", "DG RATING": 27, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "Inhouse/Major Parts Replacement", "Current Status": "Not Operational"}, {"NAME": 7371, "DG ENGINE SERIAL NUMBER": "GN657320", "DG CURRENT SITE": 7371, "DG PREVIOUS SITE": 7371, "ASSET CODE": "CM0437533", "Subregion": "Central-1", "Grid": "C1006", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 7593, "DG ENGINE SERIAL NUMBER": "T832080018243T", "DG CURRENT SITE": 7593, "DG PREVIOUS SITE": "Mobile DG Van 03 Central-5", "ASSET CODE": "CM0328827", "Subregion": "Central-5", "Grid": "C5007", "DG BRAND": "Power SAMEE", "DG ENGINE MAKE": "Tianjin Lovol", "DG RATING": 27, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 5568, "DG ENGINE SERIAL NUMBER": "735572S", "DG CURRENT SITE": 5568, "DG PREVIOUS SITE": 5568, "ASSET CODE": "NULL", "Subregion": "Central-1", "Grid": "C1006", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 43028, "DG ENGINE SERIAL NUMBER": 3829368, "DG CURRENT SITE": 43028, "DG PREVIOUS SITE": 5259, "ASSET CODE": "CM0376039", "Subregion": "Central-3", "Grid": "C3007", "DG BRAND": "Denyo", "DG ENGINE MAKE": "Kabuta", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 5106, "DG ENGINE SERIAL NUMBER": 55814, "DG CURRENT SITE": 5106, "DG PREVIOUS SITE": 5106, "ASSET CODE": "CM0478092", "Subregion": "Central-5", "Grid": "C5002", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mistubishi", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6318, "DG ENGINE SERIAL NUMBER": "925905P", "DG CURRENT SITE": 6318, "DG PREVIOUS SITE": 6318, "ASSET CODE": "CM0175638", "Subregion": "Central-3", "Grid": "C3003", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 40700, "DG ENGINE SERIAL NUMBER": "GN65732U960163S", "DG CURRENT SITE": 40700, "DG PREVIOUS SITE": 40700, "ASSET CODE": "NULL", "Subregion": "Central-6", "Grid": "C6005", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6829, "DG ENGINE SERIAL NUMBER": "S4Q 056102", "DG CURRENT SITE": 6829, "DG PREVIOUS SITE": 5376, "ASSET CODE": "CMO499791", "Subregion": "Central-2", "Grid": "C2007", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4388, "DG ENGINE SERIAL NUMBER": "569178P", "DG CURRENT SITE": 4388, "DG PREVIOUS SITE": 4388, "ASSET CODE": "NULL", "Subregion": "Central-3", "Grid": "C3009", "DG BRAND": "Power Tech", "DG ENGINE MAKE": "Perkins", "DG RATING": 13, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6194, "DG ENGINE SERIAL NUMBER": "736944S", "DG CURRENT SITE": 6194, "DG PREVIOUS SITE": 6164, "ASSET CODE": "CM0333871", "Subregion": "Central-3", "Grid": "C3009", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 5711, "DG ENGINE SERIAL NUMBER": "657320000U00", "DG CURRENT SITE": 5711, "DG PREVIOUS SITE": 5925, "ASSET CODE": "NULL", "Subregion": "Central-3", "Grid": "C3008", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 27, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 7411, "DG ENGINE SERIAL NUMBER": "985433T", "DG CURRENT SITE": 7411, "DG PREVIOUS SITE": 7411, "ASSET CODE": "CM0389957", "Subregion": "Central-1", "Grid": "C1004", "DG BRAND": "Welland Power", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6571, "DG ENGINE SERIAL NUMBER": "960164S", "DG CURRENT SITE": 6571, "DG PREVIOUS SITE": 42245, "ASSET CODE": "NULL", "Subregion": "Central-3", "Grid": "C3011", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 44575, "DG ENGINE SERIAL NUMBER": "HP35107U995397P", "DG CURRENT SITE": 44575, "DG PREVIOUS SITE": 40729, "ASSET CODE": "PK0065747", "Subregion": "Central-6", "Grid": "C6005", "DG BRAND": "Adam jee", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 42197, "DG ENGINE SERIAL NUMBER": "V22037N2129", "DG CURRENT SITE": 42197, "DG PREVIOUS SITE": 6416, "Subregion": "Central-3", "Grid": "C3007", "DG BRAND": "Elemax", "DG ENGINE MAKE": "Kabuta", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 44563, "DG ENGINE SERIAL NUMBER": "T22K07011837", "DG CURRENT SITE": 44563, "DG PREVIOUS SITE": 6000, "ASSET CODE": "CM0483193", "Subregion": "Central-5", "Grid": "C5002", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4846, "DG ENGINE SERIAL NUMBER": "991910P", "DG CURRENT SITE": 4846, "DG PREVIOUS SITE": 4499, "Subregion": "Central-5", "Grid": "C5005", "DG BRAND": "Adamjee", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "Inhouse/Major Parts Replacement", "Current Status": "Not Operational"}, {"NAME": 42039, "DG ENGINE SERIAL NUMBER": 60454, "DG CURRENT SITE": 42039, "DG PREVIOUS SITE": 4523, "ASSET CODE": 473742, "Subregion": "Central-3", "Grid": "C3010", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6000, "DG ENGINE SERIAL NUMBER": "HP35187U935255S", "DG CURRENT SITE": 6000, "DG PREVIOUS SITE": 6000, "ASSET CODE": "NULL", "Subregion": "Central-6", "Grid": "C6002", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6735, "DG ENGINE SERIAL NUMBER": "KM2207019182", "DG CURRENT SITE": 6735, "DG PREVIOUS SITE": 4766, "ASSET CODE": "CM0507429", "Subregion": "Central-1", "Grid": "C1004", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 6715, "DG ENGINE SERIAL NUMBER": 55546, "DG CURRENT SITE": 6715, "DG PREVIOUS SITE": 5481, "ASSET CODE": "CM0483190", "Subregion": "Central-6", "Grid": "C6003", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 44119, "DG ENGINE SERIAL NUMBER": "HP35107U925920P", "DG CURRENT SITE": 44119, "DG PREVIOUS SITE": 5460, "ASSET CODE": "NULL", "Subregion": "Central-6", "Grid": "C6002", "DG BRAND": "Adam jee", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "MOH Site A": 5460, "MOH TT Status": "Approved", "MOH Completion Date": "2025-10-02", "Remarks Category": "MOH Done (Modification Req)", "Current Status": "Not Operational"}, {"NAME": 7083, "DG ENGINE SERIAL NUMBER": "2203-7J5850", "DG CURRENT SITE": 7083, "DG PREVIOUS SITE": 4520, "ASSET CODE": "no", "Subregion": "Central-3", "Grid": "C3010", "DG BRAND": "Elemax", "DG ENGINE MAKE": "Kabuta", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4919, "DG ENGINE SERIAL NUMBER": "GN65732U964268S", "DG CURRENT SITE": 4919, "DG PREVIOUS SITE": 7089, "ASSET CODE": "CMO390691", "Subregion": "Central-3", "Grid": "C3009", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkin", "DG RATING": 27, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": "Mobile DG Van 07 Central-1", "DG ENGINE SERIAL NUMBER": "GN65732N735350S", "DG CURRENT SITE": "Mobile DG Van 07 Central-1", "DG PREVIOUS SITE": 4356, "ASSET CODE": "CM0175545", "Subregion": "Central-1", "DG BRAND": "Aramus", "DG ENGINE MAKE": "Perkins", "DG RATING": 20, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 5724, "DG ENGINE SERIAL NUMBER": "KM2207020595", "DG CURRENT SITE": 5724, "DG PREVIOUS SITE": 5527, "ASSET CODE": "CM0368582", "Subregion": "Central-6", "Grid": "C6005", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}, {"NAME": 4199, "DG ENGINE SERIAL NUMBER": "S4Q054880", "DG CURRENT SITE": 4199, "DG PREVIOUS SITE": 5590, "ASSET CODE": "CM0507155", "Subregion": "Central-6", "Grid": "C6002", "DG BRAND": "SDMO", "DG ENGINE MAKE": "Mitsubishi", "DG RATING": 22, "OPERATIONAL STATUS": "Not Operational", "Remarks Category": "MOH DG Additional", "Current Status": "Not Operational"}]}, {"sheet": "2 Phase Missing", "row_count": 35, "columns": ["Site Name", "Sub Region", "Grid", "Site Classification", "Single/Hub", "Dep", "Sharing Status", "OMO", "Ph1", "Ph2", "Ph3", "Status", "Action Plan", "Repetitive Wk42"], "sample_records": [{"Site Name": 40265, "Sub Region": "Central-2", "Grid": "C2007", "Site Classification": "Silver", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 223, "Status": "Pending", "Action Plan": "Team Aligned For checking", "Repetitive Wk42": "Chronic"}, {"Site Name": 4568, "Sub Region": "Central-2", "Grid": "C2006", "Site Classification": "Strategic", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 242.4, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 5119, "Sub Region": "Central-2", "Grid": "C2006", "Site Classification": "Gold", "Single/Hub": "Minor Hub(1~4)", "Dep": 4, "Sharing Status": "Self Sites", "Ph1": 222, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 5792, "Sub Region": "Central-2", "Grid": "C2005", "Site Classification": "Gold", "Single/Hub": "Minor Hub(1~4)", "Dep": 3, "Sharing Status": "Self Sites", "Ph1": 232.5, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 6210, "Sub Region": "Central-2", "Grid": "C2007", "Site Classification": "Silver", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "OMO": "Ufone", "Ph1": 0, "Ph2": 0, "Ph3": 237.5, "Status": "Pending", "Action Plan": "Team Aligned For checking", "Repetitive Wk42": "Chronic"}, {"Site Name": 6890, "Sub Region": "Central-2", "Grid": "C2010", "Site Classification": "Gold", "Single/Hub": "Minor Hub(1~4)", "Dep": 2, "Sharing Status": "Self Sites", "Ph1": 225.3, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 7913, "Sub Region": "Central-2", "Grid": "C2010", "Site Classification": "Gold", "Single/Hub": "Major Hub(5~10)", "Dep": 8, "Sharing Status": "Self Sites", "Ph1": 235.1, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 42052, "Sub Region": "Central-3", "Grid": "C3010", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 243.3, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "TF Internal Issue/HC Required", "Repetitive Wk42": "Chronic"}, {"Site Name": 42188, "Sub Region": "Central-3", "Grid": "C3008", "Site Classification": "Platinum", "Single/Hub": "Major Hub(5~10)", "Dep": 6, "Sharing Status": "Self Sites", "Ph1": 241.2, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 42206, "Sub Region": "Central-3", "Grid": "C3001", "Site Classification": "Gold", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 237.4, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 4278, "Sub Region": "Central-3", "Grid": "C3003", "Site Classification": "Silver", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 229.6, "Status": "Pending", "Action Plan": "Team Aligned"}, {"Site Name": 43073, "Sub Region": "Central-3", "Grid": "C3002", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 237.6, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "ATW D molish required", "Repetitive Wk42": "Chronic"}, {"Site Name": 43444, "Sub Region": "Central-3", "Grid": "C3007", "Site Classification": "Gold", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 255.1, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "Team Aligned For checking"}, {"Site Name": 44459, "Sub Region": "Central-3", "Grid": "C3006", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Status": "Pending", "Action Plan": "Sinlge core cable installed, Issue already taken up with Vendor, 500m Power cable", "Repetitive Wk42": "Chronic"}, {"Site Name": 5272, "Sub Region": "Central-3", "Grid": "C3004", "Site Classification": "Gold", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 234.8, "Ph3": 0, "Status": "Pending", "Action Plan": "Access Not Allow", "Repetitive Wk42": "Chronic"}, {"Site Name": 5322, "Sub Region": "Central-3", "Grid": "C3003", "Site Classification": "P+", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 239.2, "Ph3": 236.3, "Status": "Pending", "Action Plan": "Team Aligned For checking", "Repetitive Wk42": "Chronic"}, {"Site Name": 5813, "Sub Region": "Central-3", "Grid": "C3010", "Site Classification": "Silver", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 231.2, "Status": "Pending", "Action Plan": "Team Aligned For checking", "Repetitive Wk42": "Chronic"}, {"Site Name": 6067, "Sub Region": "Central-3", "Grid": "C3012", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Status": "Pending", "Action Plan": "Phase Mising 11kva line", "Repetitive Wk42": "Chronic"}, {"Site Name": 6267, "Sub Region": "Central-3", "Grid": "C3004", "Site Classification": "Gold", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 220.1, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "TF Internal Issue/HC Required"}, {"Site Name": 6520, "Sub Region": "Central-3", "Grid": "C3001", "Site Classification": "Gold", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 237, "Ph2": 0, "Ph3": 0, "Status": "Pending", "Action Plan": "ZTE SMR Required", "Repetitive Wk42": "Chronic"}, {"Site Name": 6547, "Sub Region": "Central-3", "Grid": "C3002", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 241.7, "Ph3": 0, "Status": "Pending", "Action Plan": "TF Internal Issue/HC Required", "Repetitive Wk42": "Chronic"}, {"Site Name": 6574, "Sub Region": "Central-3", "Grid": "C3010", "Site Classification": "P+", "Single/Hub": "Major Hub(5~10)", "Dep": 5, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 235.6, "Ph3": 240.5, "Status": "Pending", "Action Plan": "EM Port Faulty"}, {"Site Name": 5841, "Sub Region": "Central-5", "Grid": "C5005", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 217.9, "Status": "Pending", "Action Plan": "Transformer Faulty", "Repetitive Wk42": "Chronic"}, {"Site Name": 7161, "Sub Region": "Central-5", "Grid": "C5002", "Site Classification": "Gold", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 232.2, "Ph2": 232.2, "Ph3": 0, "Status": "Pending", "Action Plan": "4 core 25 Meter EM to Rooftop", "Repetitive Wk42": "Chronic"}, {"Site Name": 7196, "Sub Region": "Central-5", "Grid": "C5009", "Site Classification": "Platinum", "Single/Hub": "Critical Hub(10++)", "Dep": 11, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 0, "Ph3": 224.1, "Status": "Pending", "Action Plan": "huawei Rectifier back plans faulty", "Repetitive Wk42": "Chronic"}, {"Site Name": 7894, "Sub Region": "Central-5", "Grid": "C5004", "Site Classification": "Gold", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "OMO": "Jazz", "Ph1": 0, "Ph2": 250.3, "Ph3": 0, "Status": "Pending", "Action Plan": "Visit Pending", "Repetitive Wk42": "Chronic"}, {"Site Name": 44529, "Sub Region": "Central-1", "Grid": "C1004", "Site Classification": "Gold", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "OMO": "Jazz", "Ph1": 0, "Ph2": 0, "Ph3": 252, "Status": "Pending", "Action Plan": "LT Cable faulty"}, {"Site Name": 6096, "Sub Region": "Central-1", "Grid": "C1006", "Site Classification": "Gold", "Single/Hub": "FTTS Sites", "Dep": 1, "Sharing Status": "Self Sites", "Ph1": 0, "Ph2": 239.3, "Ph3": 0, "Status": "Pending", "Action Plan": "Four core cable / available", "Repetitive Wk42": "Chronic"}, {"Site Name": 4357, "Sub Region": "Central-6", "Grid": "C6003", "Site Classification": "Platinum", "Single/Hub": "Single", "Dep": 1, "Sharing Status": "Self Sites", "OMO": "Telenor", "Ph1": 0, "Ph2": 230.8, "Ph3": 0, "Status": "Pending", "Action Plan": "Chassis Faulty"}, {"Site Name": 7349, "Sub Region": "Central-1", "Grid": "C1006", "Site Classification": "Gold", "Single/Hub": "Minor Hub(1~4)", "Dep": 2, "Sharing Status": "Self Sites", "OMO": "Jazz", "Ph1": 0, "Ph2": 252.8, "Ph3": 240, "Status": "Pending", "Action Plan": "EM burnt"}]}, {"sheet": "Fluctuated Sites", "row_count": 21, "columns": ["Site", "SubRegion", "Grid", "Wk44 Sum of Fluct (25x)", "Wk43", ">10 Days", "Classification", "Power Source", "Li Cap AH", "BB Date/Yr", "HUB/Single", "Current Status"], "sample_records": [{"Site": 4412, "SubRegion": "Central-3", "Grid": "C3009", "Wk44 Sum of Fluct (25x)": 27, "Wk43": 57, ">10 Days": 6, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": 500, "BB Date/Yr": "2022-10-30", "HUB/Single": "Major Hub(5~10)", "Current Status": "Pending"}, {"Site": 4474, "SubRegion": "Central-3", "Grid": "C3008", "Wk44 Sum of Fluct (25x)": 28, "Wk43": 48, ">10 Days": 5, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": 500, "BB Date/Yr": "2022-10-27", "HUB/Single": "Minor Hub(1~4)", "Current Status": "Pending"}, {"Site": 4521, "SubRegion": "Central-3", "Grid": "C3010", "Wk44 Sum of Fluct (25x)": 45, "Wk43": 12, ">10 Days": 3, "Classification": "P+", "Power Source": "Li-ion BB", "Li Cap AH": "300 + 300", "BB Date/Yr": "2024-10-08", "HUB/Single": "PTN Node Sites", "Current Status": "Pending"}, {"Site": 4570, "SubRegion": "Central-2", "Grid": "C2002", "Wk44 Sum of Fluct (25x)": 43, "Wk43": 24, ">10 Days": 3, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2022-10-31", "HUB/Single": "Major Hub(5~10)", "Current Status": "Pending"}, {"Site": 4773, "SubRegion": "Central-5", "Grid": "C5001", "Wk44 Sum of Fluct (25x)": 127, "Wk43": 97, ">10 Days": 9, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 200, "BB Date/Yr": "2022-03-12", "HUB/Single": "FTTS Sites", "Current Status": "Pending"}, {"Site": 4986, "SubRegion": "Central-2", "Grid": "C2007", "Wk44 Sum of Fluct (25x)": 100, "Wk43": 14, ">10 Days": 3, "Classification": "Silver", "Power Source": "AGM", "Li Cap AH": 0, "BB Date/Yr": "2018-02-09", "HUB/Single": "FTTS Sites", "Current Status": "Pending"}, {"Site": 4998, "SubRegion": "Central-2", "Grid": "C2008", "Wk44 Sum of Fluct (25x)": 134, "Wk43": 312, ">10 Days": 12, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2022-05-28", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 5488, "SubRegion": "Central-1", "Grid": "C1003", "Wk44 Sum of Fluct (25x)": 37, "Wk43": 18, ">10 Days": 6, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": "500 + 400", "BB Date/Yr": "2026-10-22", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 6419, "SubRegion": "Central-2", "Grid": "C2002", "Wk44 Sum of Fluct (25x)": 45, "Wk43": 25, ">10 Days": 3, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2020-03-15", "HUB/Single": "Minor Hub(1~4)", "Current Status": "Pending"}, {"Site": 6650, "SubRegion": "Central-6", "Grid": "C6002", "Wk44 Sum of Fluct (25x)": 28, "Wk43": 39, ">10 Days": 8, "Classification": "LRS", "Power Source": "AGM", "Li Cap AH": 0, "BB Date/Yr": "2016-08-11", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 6764, "SubRegion": "Central-2", "Grid": "C2001", "Wk44 Sum of Fluct (25x)": 289, "Wk43": 281, ">10 Days": 9, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2023-04-03", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 7546, "SubRegion": "Central-5", "Grid": "C5006", "Wk44 Sum of Fluct (25x)": 267, "Wk43": 366, ">10 Days": 7, "Classification": "P+", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2024-04-26", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 7790, "SubRegion": "Central-1", "Grid": "C1004", "Wk44 Sum of Fluct (25x)": 56, "Wk43": 42, ">10 Days": 6, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2023-12-16", "HUB/Single": "FTTS Sites", "Current Status": "Pending"}, {"Site": 40629, "SubRegion": "Central-5", "Grid": "C5006", "Wk44 Sum of Fluct (25x)": 372, "Wk43": 591, ">10 Days": 6, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2024-08-20", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 40872, "SubRegion": "Central-5", "Grid": "C5005", "Wk44 Sum of Fluct (25x)": 33, "Wk43": 16, ">10 Days": 3, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": "200 + 200", "BB Date/Yr": "2025-05-10", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 40923, "SubRegion": "Central-5", "Grid": "C5005", "Wk44 Sum of Fluct (25x)": 109, "Wk43": 76, ">10 Days": 5, "Classification": "Platinum", "Power Source": "Li-ion BB", "Li Cap AH": 200, "BB Date/Yr": "2025-04-26", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 41138, "SubRegion": "Central-5", "Grid": "C5005", "Wk44 Sum of Fluct (25x)": 36, "Wk43": 16, ">10 Days": 3, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 400, "BB Date/Yr": "2023-02-28", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 41161, "SubRegion": "Central-5", "Grid": "C5006", "Wk44 Sum of Fluct (25x)": 218, "Wk43": 292, ">10 Days": 6, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 200, "BB Date/Yr": "2024-07-01", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 41177, "SubRegion": "Central-5", "Grid": "C5006", "Wk44 Sum of Fluct (25x)": 245, "Wk43": 297, ">10 Days": 9, "Classification": "Gold", "Power Source": "DC Shared", "Li Cap AH": 0, "BB Date/Yr": "2024-05-29", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 41794, "SubRegion": "Central-2", "Grid": "C2002", "Wk44 Sum of Fluct (25x)": 46, "Wk43": 26, ">10 Days": 4, "Classification": "Gold", "Power Source": "Li-ion BB", "Li Cap AH": 600, "BB Date/Yr": "2024-06-23", "HUB/Single": "Single", "Current Status": "Pending"}, {"Site": 42005, "SubRegion": "Central-3", "Grid": "C3010", "Wk44 Sum of Fluct (25x)": 61, "Wk43": 122, ">10 Days": 9, "Classification": "Silver", "Power Source": "DC Shared", "Li Cap AH": 0, "BB Date/Yr": "2025-11-16", "HUB/Single": "Single", "Current Status": "Pending"}]}, {"sheet": "Down Cells", "row_count": 15, "columns": ["Site ID", "Region", "Grid", "NE Type", "Site Category", "Concerned TL", "Concerned Manager", "Cell Name", "Occur Time", "Down Technology", "Fault Duration", "Status", "Fault Type", "Feedback Received from Region", "OCT'26 TCH", "OCT'26 Utran", "OCT'26 Eutran"], "sample_records": [{"Site ID": 4632, "Region": "Central-6", "Grid": "C6001", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "ejaz.bashir", "Concerned Manager": "Ahmed Manzur", "Cell Name": "LHR4632_6_SunderOHWT4", "Occur Time": "2026-10-25 07:06:42", "Down Technology": 192.888333, "Fault Duration": "2G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 90.9354924391775, "OCT'26 Utran": 99.9925806451613, "OCT'26 Eutran": 99.9874193548387}, {"Site ID": 7967, "Region": "Central-2", "Grid": "C2003", "NE Type": "Cell", "Site Category": "LRS", "Concerned TL": "iqbal.javed", "Concerned Manager": "Ayaz Ahmed", "Cell Name": "RUR7967_1_Wanooka", "Occur Time": "2026-10-23 16:27:50", "Down Technology": 231.536111, "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 59.2626099126013, "OCT'26 Utran": 99.7230598195084, "OCT'26 Eutran": 99.7133146654719}, {"Site ID": 4484, "Region": "Central-2", "Grid": "C2006", "NE Type": "Cell", "Site Category": "Platinum", "Concerned TL": "adil.hussain-icpl", "Concerned Manager": "Ayaz Ahmed", "Cell Name": "RUR4484_3_Bhawana", "Occur Time": "2026-10-23 10:32:03", "Down Technology": 237.465833, "Fault Duration": "2G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 94.2757642137802, "OCT'26 Utran": 99.740253509558, "OCT'26 Eutran": 98.7627090800478}, {"Site ID": 4998, "Region": "Central-2", "Grid": "C2008", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "adil.hussain-icpl", "Concerned Manager": "Ayaz Ahmed", "Cell Name": "FSB4998_6_EjazTown", "Occur Time": "2026-10-21 22:13:17", "Down Technology": 273.778611, "Fault Duration": "2G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 77.1486362369811, "OCT'26 Utran": 99.0254838709678, "OCT'26 Eutran": 99.0690322580645}, {"Site ID": 4083, "Region": "Central-6", "Grid": "C6001", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "ejaz.bashir", "Concerned Manager": "Ahmed Manzur", "Cell Name": "RWN4083_5_SunderRd", "Occur Time": "2026-10-21 11:19:13", "Down Technology": 284.679722, "Fault Duration": "2G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 92.6074277103099, "OCT'26 Utran": 98.9612903225807, "OCT'26 Eutran": 99.518064516129}, {"Site ID": 40376, "Region": "Central-2", "Grid": "C2001", "NE Type": "Cell", "Site Category": "Silver", "Concerned TL": "umair.shah", "Concerned Manager": "Ayaz Ahmed", "Cell Name": "MIA40376_3_WandiGhunwala", "Occur Time": "2026-10-19 12:13:46", "Down Technology": 331.770556, "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 84.3750583811573, "OCT'26 Utran": 90.8304557822723, "OCT'26 Eutran": 89.7368421178956}, {"Site ID": 7143, "Region": "Central-5", "Grid": "C5003", "NE Type": "Cell", "Site Category": "Platinum", "Concerned TL": "rashid.maqbool-icpl", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "GJT7143_2_MohTibiGorian", "Occur Time": "2026-10-15 22:13:54", "Down Technology": "1901-02-20 18:26:24", "Fault Duration": "2G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "OCT'26 TCH": 90.2139960095579, "OCT'26 Utran": 98.4661290322581, "OCT'26 Eutran": 98.4406451612903}, {"Site ID": 6755, "Region": "Central-3", "Grid": "C3007", "NE Type": "Cell", "Site Category": "Silver", "Concerned TL": "hazoor.bukhsh", "Concerned Manager": "Syed Muhammad Ali Rizvi", "Cell Name": "DGK6755_3_Soleenwala", "Occur Time": "2026-10-13 15:27:00", "Down Technology": "1901-04-16 13:12:00", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">=7 Day & < =1 Month", "Feedback Received from Region": "RSU GU908 faulty, needs replacement /NA in WH, support required", "OCT'26 TCH": 81.8823303225806, "OCT'26 Utran": 99.9924955197133, "OCT'26 Eutran": 99.9887992831541}, {"Site ID": 44294, "Region": "Central-3", "Grid": "C3011", "NE Type": "Cell", "Site Category": "Silver", "Concerned TL": "muhammad.adnan", "Concerned Manager": "Syed Muhammad Ali Rizvi", "Cell Name": "RUR44294H_2_ChowkiMustiKhan", "Occur Time": "2026-10-13 10:43:14", "Down Technology": "1901-04-21 06:42:24", "Fault Duration": "3G", "Status": "Pending", "Fault Type": ">=7 Day & < =1 Month", "Feedback Received from Region": "RRU 5513 faulty, needs replacement / NA in Warehouse, support required", "OCT'26 TCH": 98.6618695208323, "OCT'26 Utran": 66.353864495221, "OCT'26 Eutran": 82.9570855734767}, {"Site ID": 4044, "Region": "Central-5", "Grid": "C5001", "NE Type": "Cell", "Site Category": "Bronze", "Concerned TL": "atif.hussain-hrsg", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "KMK4044_3_LadiesPark", "Occur Time": "2026-10-01 20:17:23", "Down Technology": "1902-01-24 17:02:48", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "Feedback Received from Region": "As per RAN, Traffic is not compromised, Scratching required", "OCT'26 TCH": 68.7473509402873, "OCT'26 Utran": 78.05, "OCT'26 Eutran": 75.9029032258064}, {"Site ID": 5366, "Region": "Central-2", "Grid": "C2004", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "umair.shah", "Concerned Manager": "Ayaz Ahmed", "Cell Name": "JHG5366_1_BlockShahrd", "Occur Time": "2026-09-29 11:44:22", "Down Technology": "1902-03-22 06:15:12", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "OCT'26 TCH": 80.3192113901848, "OCT'26 Utran": 99.8806451612903, "OCT'26 Eutran": 99.8645161290323}, {"Site ID": 40421, "Region": "Central-5", "Grid": "C5009", "NE Type": "Cell", "Site Category": "Silver", "Concerned TL": "atif.hussain-hrsg", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "DSK40421_3_CollegeRD", "Occur Time": "2026-09-19 18:29:22", "Down Technology": "1902-11-10 12:15:12", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "OCT'26 TCH": 70.1849139859495, "OCT'26 Utran": 98.2629365790522, "OCT'26 Eutran": 98.0691935483871}, {"Site ID": 44945, "Region": "Central-5", "Grid": "C5009", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "atif.hussain-hrsg", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "PSR44945_2_PasrurZarawalRdDNR", "Occur Time": "2026-09-13 01:03:35", "Down Technology": "1903-04-20 22:34:00", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "Feedback Received from Region": "As per RAN, Traffic is not compromised, Scratching required", "OCT'26 TCH": 82.8615318016239, "OCT'26 Utran": 99.0582575448029, "OCT'26 Eutran": 98.1444008031329}, {"Site ID": 6741, "Region": "Central-5", "Grid": "C5007", "NE Type": "Cell", "Site Category": "Bronze", "Concerned TL": "zafariqbal-fe", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "WRD6741_2_AlHabibSchoolMainGTRd", "Occur Time": "2026-09-09 16:48:36", "Down Technology": "1903-07-10 04:33:36", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "OCT'26 TCH": 79.9990176433692, "OCT'26 Utran": 95.150269315014, "OCT'26 Eutran": 95.3659896455595}, {"Site ID": 44945, "Region": "Central-5", "Grid": "C5009", "NE Type": "Cell", "Site Category": "Gold", "Concerned TL": "atif.hussain-hrsg", "Concerned Manager": "Muhammad Hashim Habib", "Cell Name": "PSR44945_3_PasrurZarawalRdDNR", "Occur Time": "2026-08-21 02:19:03", "Down Technology": "1904-10-22 16:22:48", "Fault Duration": "2G", "Status": "Scratching Escalations done", "Fault Type": ">1 Month", "Feedback Received from Region": "As per RAN, Traffic is not compromised, Scratching required", "OCT'26 TCH": 82.8615318016239, "OCT'26 Utran": 99.0582575448029, "OCT'26 Eutran": 98.1444008031329}]}, {"sheet": "Zero Traffic", "row_count": 7, "columns": ["Zero Traffic cell", "SID", "Sub region", "Grid", "Technology", "on Air", "Status", "Wk44 CA", "Repetitive W43"], "sample_records": [{"Zero Traffic cell": "LHR42938L_1_PackagesMall", "SID": 42938, "Sub region": "Central-1", "Grid": "C1003", "Technology": "4G", "on Air": "2019-09-30", "Status": "Pending", "Wk44 CA": 98.1628571428571, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR41676L_104_Chak133_SA", "SID": 41676, "Sub region": "Central-2", "Grid": "C2009", "Technology": "4G", "on Air": "2018-11-30", "Status": "Pending", "Wk44 CA": 98.45, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR42616L_2L_PolkaPend", "SID": 42616, "Sub region": "Central-6", "Grid": "C6005", "Technology": "4G", "on Air": "2019-05-31", "Status": "Pending", "Wk44 CA": 93.78, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR7734H_7_ChohrriWalaRasulNagar", "SID": 7734, "Sub region": "Central-6", "Grid": "C6002", "Technology": "3G", "on Air": "2013-08-30", "Status": "Pending", "Wk44 CA": 98.6575238095238, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR42180_5_Dharewala", "SID": 42180, "Sub region": "Central-3", "Grid": "C3005", "Technology": "2G", "on Air": "2018-07-31", "Status": "Pending", "Wk44 CA": 98.6607142857143, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR43548_6_KahnaNau", "SID": 43548, "Sub region": "Central-1", "Grid": "C1003", "Technology": "2G", "on Air": "2023-06-16", "Status": "Pending", "Wk44 CA": 95.6091428571429, "Repetitive W43": "Yes"}, {"Zero Traffic cell": "RUR43931_4_ChahGujjarWala", "SID": 43931, "Sub region": "Central-3", "Grid": "C3007", "Technology": "2G", "on Air": "2024-08-08", "Status": "Pending", "Wk44 CA": 96.4103985714286, "Repetitive W43": "Yes"}]}, {"sheet": "VSWR", "row_count": 13, "columns": ["Site", "Ne name", "Device Name", "Alarm title", "SubRegion", "Grid", "Occurrence Notify Time (NT)", "Aging", "Status"], "sample_records": [{"Site": 4883, "Ne name": "OKA4883H_ShabbirSharifRd_S", "Alarm title": "RF Unit VSWR Threshold Crossed", "SubRegion": "Central-4", "Grid": "C4003", "Occurrence Notify Time (NT)": "2026-10-22 00:18:14", "Aging": 28.987337962963, "Status": "Pending"}, {"Site": 41914, "Ne name": "RUR41914H_BastiVakilan_S", "Alarm title": "RF Unit VSWR Threshold Crossed", "SubRegion": "Central-4", "Grid": "C4001", "Occurrence Notify Time (NT)": "2026-10-22 00:17:58", "Aging": 28.9875231481482, "Status": "Pending"}, {"Site": 4414, "Ne name": "RUR4414H_MoreFarrukhabad_S", "Alarm title": "RF Unit VSWR Threshold Crossed", "SubRegion": "Central-4", "Grid": "C4003", "Occurrence Notify Time (NT)": "2026-10-21 17:51:52", "Aging": 29.2556481481481, "Status": "Pending"}, {"Site": 7016, "Ne name": "KSB7016L_HakimanWalaChowk(7016)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2001", "Occurrence Notify Time (NT)": "2026-10-25 18:08:14", "Aging": 25.2442824074074, "Status": "Pending"}, {"Site": 5122, "Ne name": "RUR5122L_BurjMandi(5122)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2008", "Occurrence Notify Time (NT)": "2026-10-21 18:24:00", "Aging": 29.2333333333333, "Status": "Pending"}, {"Site": 7920, "Ne name": "KMK7920L_ThanaRdGhousiaChwk(7920)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-5", "Grid": "C5001", "Occurrence Notify Time (NT)": "2026-10-21 17:45:08", "Aging": 29.2603240740741, "Status": "Pending"}, {"Site": 5404, "Ne name": "FSB5404L_MohAfghanabad(5404)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2008", "Occurrence Notify Time (NT)": "2026-10-21 01:44:55", "Aging": 29.9271412037037, "Status": "Pending"}, {"Site": 6790, "Ne name": "SRG6790L_IkramColony(6790)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2002", "Occurrence Notify Time (NT)": "2026-10-20 16:43:22", "Aging": 30.3032175925926, "Status": "Pending"}, {"Site": 42525, "Ne name": "RUR42525L_IndustrialAve(42525)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2007", "Occurrence Notify Time (NT)": "2026-10-18 22:49:44", "Aging": 32.0487962962963, "Status": "Pending"}, {"Site": 7143, "Ne name": "GJT7143L_MohTibiGorian(7143)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-5", "Grid": "C5003", "Occurrence Notify Time (NT)": "2026-10-18 20:21:23", "Aging": 32.1518171296296, "Status": "Pending"}, {"Site": 5406, "Ne name": "FSB5406L_ShadabColony(5406)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-2", "Grid": "C2007", "Occurrence Notify Time (NT)": "2026-10-14 11:50:07", "Aging": 36.5068634259259, "Status": "Pending"}, {"Site": 42630, "Ne name": "GRN42630L_BarkatColony(42630)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-5", "Grid": "C5001", "Occurrence Notify Time (NT)": "2026-10-03 20:30:19", "Aging": 47.1456134259259, "Status": "Pending"}, {"Site": 5798, "Ne name": "RUR5798L_SatraRdBudhaGoraya(5798)", "Alarm title": "VSWR of the antenna feeder abnormal", "SubRegion": "Central-5", "Grid": "C5009", "Occurrence Notify Time (NT)": "2026-09-24 17:24:12", "Aging": 56.2748611111111, "Status": "Pending"}]}, {"sheet": "High TempAlm", "row_count": 6, "columns": ["Site", "Ne name", "Device Name", "Alarm title", "SubRegion", "Grid", "Occur Time", "Aging", "Status"], "sample_records": [{"Site": 6349, "Ne name": "FSB6349_JinnahColMelaMandi", "Alarm title": "Battery Bank High Temperature(198092599)", "SubRegion": "Central-2", "Grid": "C2007", "Occur Time": "2026-10-22 14:55:41", "Aging": 28.3779976851852, "Status": "Pending"}, {"Site": 6891, "Ne name": "RUR6891_JinnahColony", "Alarm title": "Battery Bank High Temperature(198092599)", "SubRegion": "Central-2", "Grid": "C2009", "Occur Time": "2026-10-16 16:19:04", "Aging": 34.3200925925926, "Status": "Pending"}, {"Site": 43590, "Ne name": "JHR43590L_IftikharTown(43590)", "Alarm title": "Battery Bank High Temperature", "SubRegion": "Central-2", "Grid": "C2001", "Occur Time": "2026-10-22 13:42:27", "Aging": 28.4288541666667, "Status": "Pending"}, {"Site": 44032, "Ne name": "RUR44032L_BastiIslam(4179)", "Alarm title": "Battery Bank High Temperature", "SubRegion": "Central-2", "Grid": "C2010", "Occur Time": "2026-10-19 15:23:47", "Aging": 31.3584837962963, "Status": "Pending"}, {"Site": 45429, "Ne name": "JLJ45429L_DNRMohAkbarAbad(45429)", "Alarm title": "Battery Bank High Temperature", "SubRegion": "Central-5", "Grid": "C5008", "Occur Time": "2026-10-12 13:03:47", "Aging": 38.4557060185185, "Status": "Pending"}, {"Site": 4509, "Ne name": "RUR4509L_SayiaanKiBasti(4509)", "Alarm title": "Battery Bank High Temperature", "SubRegion": "Central-5", "Grid": "C5004", "Occur Time": "2026-10-08 15:14:20", "Aging": 42.3650462962963, "Status": "Pending"}]}, {"sheet": "T Prime", "row_count": 11, "columns": ["Site ID", "Sub-Region", "Grid", "T-Prime Category", "Complete Description", "T-Prime Date", "Aging", "SLA Days", "SLA Breached(Yes/NO)", "Status", "Timeline"], "sample_records": [{"Site ID": 5480, "Sub-Region": "Central-1", "Grid": "C1003", "T-Prime Category": "Transformer", "Complete Description": "TF is faulty and the 11kva lines were broken due to the TF blast. Subdivision is problematic and the XEN is not allowing TF repair through a private workshop", "T-Prime Date": "2026-11-11", "Aging": 8, "SLA Days": 2, "SLA Breached(Yes/NO)": "Yes", "Status": "Pending", "Timeline": "2026-11-12"}, {"Site ID": 4548, "Sub-Region": "Central-1", "Grid": "C1005", "T-Prime Category": "Transformer", "Complete Description": "Transformer faulty", "T-Prime Date": "2026-11-16", "Aging": 3, "SLA Days": 4, "SLA Breached(Yes/NO)": "No", "Status": "Pending", "Timeline": "2026-11-20"}, {"Site ID": 4308, "Sub-Region": "Central-1", "Grid": "C1006", "T-Prime Category": "11 kva lines disconnected", "Complete Description": "11 kva lines disconnected by lesco team,", "T-Prime Date": "2026-11-17", "Aging": 2, "SLA Days": 1, "SLA Breached(Yes/NO)": "No", "Status": "Pending", "Timeline": "2026-11-18"}, {"Site ID": 6057, "Sub-Region": "Central-2", "Grid": "C2009", "T-Prime Category": "Transformer", "Complete Description": "Transformer theft", "T-Prime Date": "2026-10-14", "Aging": 36, "SLA Days": 4, "SLA Breached(Yes/NO)": "Yes", "Status": "Pending", "Timeline": "2026-10-17"}, {"Site ID": 5024, "Sub-Region": "Central-2", "Grid": "C2008", "T-Prime Category": "Transformer", "Complete Description": "Transformer HC required", "T-Prime Date": "2026-11-16", "Aging": 3, "SLA Days": 1, "SLA Breached(Yes/NO)": "No", "Status": "Pending", "Timeline": "2026-11-14"}, {"Site ID": 41451, "Sub-Region": "Central-2", "Grid": "C2010", "T-Prime Category": "Transformer", "Complete Description": "Transformer HC required", "T-Prime Date": "2026-11-16", "Aging": 3, "SLA Days": 1, "SLA Breached(Yes/NO)": "No", "Status": "Pending", "Timeline": "2026-11-14"}, {"Site ID": 6274, "Sub-Region": "Central-3", "Grid": "C3010", "T-Prime Category": "Energy Meter issue", "Complete Description": "Energy meter faulty", "T-Prime Date": "2026-11-18", "Aging": 1, "SLA Days": 3, "SLA Breached(Yes/NO)": "No", "Status": "Pending", "Timeline": "2026-11-21"}, {"Sub-Region": "Central-5", "T-Prime Category": "Transformer", "Complete Description": "Transformer faulty", "Status": "Pending"}, {"Sub-Region": "Central-5", "T-Prime Category": "Transformer", "Complete Description": "Transformer faulty", "Status": "Pending"}, {"Sub-Region": "Central-5", "T-Prime Category": "Transformer", "Complete Description": "Transformer faulty", "Status": "Pending"}, {"Sub-Region": "Central-5", "T-Prime Category": "Energy Meter issue", "Complete Description": "Energy meter faulty", "Status": "Pending"}]}, {"sheet": "E-Band Availability", "row_count": 419, "columns": ["Link Name", "Sites", "SubRegion", "Grid", "Outage", "Link Availability", "Remarks <99%", "FOPs Remarks"], "sample_records": [{"Link Name": "4080-4323_MW_SDB_TDD_NEW_P", "Sites": 4080, "SubRegion": "Central-5", "Grid": "C5002", "Outage": 7390.3, "Link Availability": 0.266835317460317, "Remarks <99%": "Degraded", "FOPs Remarks": "Huawei End Pending"}, {"Link Name": "4420-6385_MW_SDB_P", "Sites": 4420, "SubRegion": "Central-5", "Grid": "C5007", "Outage": 1851.9, "Link Availability": 0.816279761904762, "FOPs Remarks": "Relocate Link"}, {"Link Name": "7484-6763_MW_SDB_REL_P", "Sites": 7484, "SubRegion": "Central-5", "Grid": "C5002", "Outage": 1275.21666666667, "Link Availability": 0.87349041005291, "Remarks <99%": "Degraded", "FOPs Remarks": "Hardware Faulty"}, {"Link Name": "4080-4323_MW_SDB_TDD_NEW_P", "Sites": 4080, "SubRegion": "Central-5", "Grid": "C5002", "Outage": 1048.31666666667, "Link Availability": 0.896000330687831, "Remarks <99%": "Degraded", "FOPs Remarks": "Huawei End Pending"}, {"Link Name": "4658-4819_MW_SDB_XPIC_NEW_P", "Sites": 4658, "SubRegion": "Central-2", "Grid": "C2004", "Outage": 321.35, "Link Availability": 0.96812003968254, "Remarks <99%": "Degraded"}, {"Link Name": "4658-4819_MW_SDB_XPIC_NEW_P", "Sites": 4658, "SubRegion": "Central-2", "Grid": "C2004", "Outage": 309.55, "Link Availability": 0.969290674603175, "Remarks <99%": "Degraded"}, {"Link Name": "5619-4266_MW_SDB_NEW_P", "Sites": 5619, "SubRegion": "Central-5", "Grid": "C5001", "Outage": 286.3, "Link Availability": 0.971597222222222, "Remarks <99%": "Degraded"}, {"Link Name": "42942-4624_MW_SDB_TDD_NEW_P", "Sites": 42942, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 241.516666666667, "Link Availability": 0.976040013227513, "Remarks <99%": "Degraded"}, {"Link Name": "42942-4624_MW_SDB_TDD_NEW_P", "Sites": 42942, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 227.583333333333, "Link Availability": 0.977422288359788, "Remarks <99%": "Degraded"}, {"Link Name": "6209-6860_MW_SDB_NEW_P", "Sites": 6209, "SubRegion": "Central-2", "Grid": "C2009", "Outage": 151.083333333333, "Link Availability": 0.985011574074074, "Remarks <99%": "Degraded"}, {"Link Name": "7292-5576_MW_SDB_TDD_NEW_P", "Sites": 7292, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 73.95, "Link Availability": 0.99266369047619}, {"Link Name": "7292-5576_MW_SDB_TDD_NEW_P", "Sites": 7292, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 73.8666666666667, "Link Availability": 0.992671957671958}, {"Link Name": "7292-5576_MW_SDB_P", "Sites": 7292, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 70.8166666666667, "Link Availability": 0.992974537037037}, {"Link Name": "43070-5925_MW_SDB_P", "Sites": 43070, "SubRegion": "Central-3", "Grid": "C3008", "Outage": 68.8333333333333, "Link Availability": 0.993171296296296}, {"Link Name": "6737-4351_MW_SDB_P", "Sites": 6737, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 62.4166666666667, "Link Availability": 0.99380787037037}, {"Link Name": "6217-5394_MW_SDB_P", "Sites": 6217, "SubRegion": "Central-2", "Grid": "C2008", "Outage": 50.7, "Link Availability": 0.994970238095238}, {"Link Name": "4134-5972_MW_SDB_P", "Sites": 4134, "SubRegion": "Central-4", "Grid": "C4002", "Outage": 48.9166666666667, "Link Availability": 0.995147156084656}, {"Link Name": "6208-4123_MW_SDB_P", "Sites": 6208, "SubRegion": "Central-2", "Grid": "C2009", "Outage": 45.2166666666667, "Link Availability": 0.99551421957672}, {"Link Name": "5376-4971_MW_SDB_P", "Sites": 5376, "SubRegion": "Central-2", "Grid": "C2007", "Outage": 45.15, "Link Availability": 0.995520833333333}, {"Link Name": "4626-6457_MW_SDB_P", "Sites": 4626, "SubRegion": "Central-1", "Grid": "C1002", "Outage": 41.9166666666667, "Link Availability": 0.995841600529101}, {"Link Name": "5239-4560_MW_SDB_P", "Sites": 5239, "SubRegion": "Central-1", "Grid": "C1004", "Outage": 20.05, "Link Availability": 0.998010912698413}, {"Link Name": "6187-40746_MW_HWU_SDB_NEW_P", "Sites": 6187, "SubRegion": "Central-5", "Grid": "C5008", "Outage": 18.55, "Link Availability": 0.998159722222222}, {"Link Name": "5577-5528_MW_SDB_TDD_NEW_P", "Sites": 5577, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 18.3333333333333, "Link Availability": 0.998181216931217}, {"Link Name": "5577-5528_MW_SDB_TDD_NEW_P", "Sites": 5577, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 17.7833333333333, "Link Availability": 0.99823578042328}, {"Link Name": "6187-40746_MW_HWU_SDB_NEW_P", "Sites": 6187, "SubRegion": "Central-5", "Grid": "C5008", "Outage": 17.5166666666667, "Link Availability": 0.998262235449736}, {"Link Name": "6258-5615_MW_SDB_TDD_NEW_P", "Sites": 6258, "SubRegion": "Central-5", "Grid": "C5001", "Outage": 14, "Link Availability": 0.998611111111111}, {"Link Name": "5577-4624_MW_SDB_P", "Sites": 5577, "SubRegion": "Central-6", "Grid": "C6003", "Outage": 12.6333333333333, "Link Availability": 0.998746693121693}, {"Link Name": "44038-5678_MW_SDB_REL_P", "Sites": 44038, "SubRegion": "Central-2", "Grid": "C2006", "Outage": 11.8833333333333, "Link Availability": 0.998821097883598}, {"Link Name": "6258-5615_MW_SDB_TDD_NEW_P", "Sites": 6258, "SubRegion": "Central-5", "Grid": "C5001", "Outage": 9.85, "Link Availability": 0.999022817460317}, {"Link Name": "4766-6142_MW_SDB_P", "Sites": 4766, "SubRegion": "Central-1", "Grid": "C1003", "Outage": 9.31666666666667, "Link Availability": 0.999075727513227}]}, {"sheet": "RSL Deviation Link", "row_count": 35, "columns": ["Link Name", "Unique Link Name", "Site IDs", "Source NE Name", "Source NE ID", "Source Board", "Sink NE Name", "Sink NE ID", "Sink Board", "Sink Port", "Level", "Source Protect Type", "Sink Protect Type", "Planned RSL", "MAX RSL 11-08-2026", "MAX RSL 10-08-2026", "MAX RSL 09-08-2026", "MAX RSL 08-08-2026", "MAX RSL 07-08-2026", "MAX RSL 06-08-2026", "MAX RSL 05-08-2026", "Diff 11-08-2026", "Diff 10-08-2026", "Diff 09-08-2026", "Diff 08-08-2026", "Diff 07-08-2026", "Diff 06-08-2026", "Diff 05-08-2026", "Count", "Sub region", "Grid", "SiteClassification", "Status", "RCA Detail", "Repetitive Pre Wk"], "sample_records": [{"Link Name": "7655-6796_MW_MOD_REL_P", "Unique Link Name": "7655-6796_MW_MOD_REL_P-4-ISV3", "Site IDs": 7655, "Source NE Name": "7655-1", "Source NE ID": 2102216, "Source Board": "4-ISV3", "Sink NE Name": "6796-1", "Sink NE ID": "217-6796", "Sink Board": "13-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(228Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.95", "MAX RSL 11-08-2026": -46.2, "MAX RSL 10-08-2026": -45.8, "MAX RSL 09-08-2026": -45.9, "MAX RSL 08-08-2026": -46.3, "MAX RSL 07-08-2026": -46, "MAX RSL 06-08-2026": -45.8, "MAX RSL 05-08-2026": -46.1, "Diff 11-08-2026": 12.25, "Diff 10-08-2026": 11.85, "Diff 09-08-2026": 11.95, "Diff 08-08-2026": 12.35, "Diff 07-08-2026": 12.05, "Diff 06-08-2026": 11.85, "Diff 05-08-2026": 12.15, "Count": 7, "Sub region": "Central-2", "Grid": "C2002", "SiteClassification": "LRS", "Status": "Resolved", "RCA Detail": "Link to be restored as per new plan", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44434-4464_MW_NPS_REL_P", "Unique Link Name": "44434-4464_MW_NPS_REL_P-3-ISM8", "Site IDs": 44434, "Source NE Name": "44434-1", "Source NE ID": "152-39648", "Source Board": "3-ISM8", "Sink NE Name": "4464-1_FN", "Sink NE ID": "8-24464", "Sink Board": "7-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(480Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-40.53", "MAX RSL 11-08-2026": -67.7, "MAX RSL 10-08-2026": -67.3, "MAX RSL 09-08-2026": -67.6, "MAX RSL 08-08-2026": -67.1, "MAX RSL 07-08-2026": -67.6, "MAX RSL 06-08-2026": -67.5, "MAX RSL 05-08-2026": -67.5, "Diff 11-08-2026": 27.17, "Diff 10-08-2026": 26.77, "Diff 09-08-2026": 27.07, "Diff 08-08-2026": 26.57, "Diff 07-08-2026": 27.07, "Diff 06-08-2026": 26.97, "Diff 05-08-2026": 26.97, "Count": 7, "Sub region": "Central-6", "Grid": "C6004", "SiteClassification": "Bronze", "Status": "LOS Issue", "RCA Detail": "LOS issue", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44377-6463_MW_RO_REL_P", "Unique Link Name": "44377-6463_MW_RO_REL_P-3-ISV3", "Site IDs": 44377, "Source NE Name": "44377-1", "Source NE ID": 868396, "Source Board": "3-ISV3", "Sink NE Name": "6463-1_FN 3rd", "Sink NE ID": "168-16463", "Sink Board": "7-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(228Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-34.55", "MAX RSL 11-08-2026": -46.1, "MAX RSL 10-08-2026": -47.6, "MAX RSL 09-08-2026": -48.6, "MAX RSL 08-08-2026": -48.8, "MAX RSL 07-08-2026": -48.9, "MAX RSL 06-08-2026": -48.9, "MAX RSL 05-08-2026": -48.4, "Diff 11-08-2026": 11.55, "Diff 10-08-2026": 13.05, "Diff 09-08-2026": 14.05, "Diff 08-08-2026": 14.25, "Diff 07-08-2026": 14.35, "Diff 06-08-2026": 14.35, "Diff 05-08-2026": 13.85, "Count": 7, "Sub region": "Central-2", "Grid": "C2005", "SiteClassification": "Silver", "Status": "Pending", "RCA Detail": "In progress", "Repetitive Pre Wk": "No"}, {"Link Name": "6771-6464_MW_XPIC_REL_P", "Unique Link Name": "6771-6464_MW_XPIC_REL_P-1-ISV3", "Site IDs": 6464, "Source NE Name": "6464-3", "Source NE ID": "150-6464", "Source Board": "1-ISV3", "Sink NE Name": "6771-2", "Sink NE ID": "180-44028", "Sink Board": "4-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(453Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-32.21", "MAX RSL 11-08-2026": -40.4, "MAX RSL 10-08-2026": -42.1, "MAX RSL 09-08-2026": -41.5, "MAX RSL 08-08-2026": -41.3, "MAX RSL 07-08-2026": -40.8, "MAX RSL 06-08-2026": -41, "MAX RSL 05-08-2026": -41.5, "Diff 11-08-2026": 8.19, "Diff 10-08-2026": 9.89, "Diff 09-08-2026": 9.29, "Diff 08-08-2026": 9.09, "Diff 07-08-2026": 8.59, "Diff 06-08-2026": 8.79, "Diff 05-08-2026": 9.29, "Count": 7, "Sub region": "Central-2", "Grid": "C2001", "SiteClassification": "P+", "Status": "Pending", "RCA Detail": "Plan in this week", "Repetitive Pre Wk": "No"}, {"Link Name": "41764-5658_MW_MOD_NEW_P", "Unique Link Name": "41764-5658_MW_MOD_NEW_P-1-ISV3", "Site IDs": 5658, "Source NE Name": "5658-1", "Source NE ID": 1372796, "Source Board": "1-ISV3", "Sink NE Name": "41764-1", "Sink NE ID": "8-41764", "Sink Board": "3-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(480Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.53", "MAX RSL 11-08-2026": -48.8, "MAX RSL 10-08-2026": -54.6, "MAX RSL 09-08-2026": -54.5, "MAX RSL 08-08-2026": -54.3, "MAX RSL 07-08-2026": -53, "MAX RSL 06-08-2026": -52.6, "MAX RSL 05-08-2026": -52.9, "Diff 11-08-2026": 15.27, "Diff 10-08-2026": 21.07, "Diff 09-08-2026": 20.97, "Diff 08-08-2026": 20.77, "Diff 07-08-2026": 19.47, "Diff 06-08-2026": 19.07, "Diff 05-08-2026": 19.37, "Count": 7, "Sub region": "Central-2", "Grid": "C2005", "SiteClassification": "Platinum", "Status": "Pending", "RCA Detail": "Plan in this week", "Repetitive Pre Wk": "No"}, {"Link Name": "4855-4463_MW_OMT_NEW_P", "Unique Link Name": "4855-4463_MW_OMT_NEW_P-11-ISM8", "Site IDs": 4463, "Source NE Name": "4463-1", "Source NE ID": "8-14463", "Source Board": "11-ISM8", "Sink NE Name": "4855-2", "Sink NE ID": "192-26675", "Sink Board": "3-ISM8", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(491Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-38.96", "MAX RSL 11-08-2026": -52.6, "MAX RSL 10-08-2026": -53.1, "MAX RSL 09-08-2026": -53.1, "MAX RSL 08-08-2026": -53.1, "MAX RSL 07-08-2026": -52.9, "MAX RSL 06-08-2026": -54.1, "MAX RSL 05-08-2026": -53.7, "Diff 11-08-2026": 13.64, "Diff 10-08-2026": 14.14, "Diff 09-08-2026": 14.14, "Diff 08-08-2026": 14.14, "Diff 07-08-2026": 13.94, "Diff 06-08-2026": 15.14, "Diff 05-08-2026": 14.74, "Count": 7, "Sub region": "Central-6", "Grid": "C6004", "SiteClassification": "Platinum", "Status": "Pending", "RCA Detail": "In progress", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44182-6044_MW_XPIC_REL_P", "Unique Link Name": "44182-6044_MW_XPIC_REL_P-4-ISV3", "Site IDs": 44182, "Source NE Name": "44182-2", "Source NE ID": 997722, "Source Board": "4-ISV3", "Sink NE Name": "6044-3", "Sink NE ID": "146-40834", "Sink Board": "1-ISM8", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(215Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-32.69", "MAX RSL 11-08-2026": -42.9, "MAX RSL 10-08-2026": -45.8, "MAX RSL 09-08-2026": -45.9, "MAX RSL 08-08-2026": -46.9, "MAX RSL 07-08-2026": -46.1, "MAX RSL 06-08-2026": -42.8, "MAX RSL 05-08-2026": -46.8, "Diff 11-08-2026": 10.21, "Diff 10-08-2026": 13.11, "Diff 09-08-2026": 13.21, "Diff 08-08-2026": 14.21, "Diff 07-08-2026": 13.41, "Diff 06-08-2026": 10.11, "Diff 05-08-2026": 14.11, "Count": 7, "Sub region": "Central-5", "Grid": "C5005", "SiteClassification": "Silver", "Status": "LOS Issue", "RCA Detail": "LOS Issue Support Required", "Repetitive Pre Wk": "Yes"}, {"Link Name": "4265-5621_MW_NEW_P", "Unique Link Name": "4265-5621_MW_NEW_P-8-ISV3", "Site IDs": 4265, "Source NE Name": "4265-1 3rd", "Source NE ID": "9-14265", "Source Board": "8-ISV3", "Sink NE Name": "5621-4", "Sink NE ID": 1359282, "Sink Board": "4-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(453Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-34.03", "MAX RSL 11-08-2026": -43.5, "MAX RSL 10-08-2026": -43.6, "MAX RSL 09-08-2026": -43.7, "MAX RSL 08-08-2026": -43.7, "MAX RSL 07-08-2026": -43.8, "MAX RSL 06-08-2026": -43.7, "MAX RSL 05-08-2026": -43.7, "Diff 11-08-2026": 9.47, "Diff 10-08-2026": 9.57, "Diff 09-08-2026": 9.67, "Diff 08-08-2026": 9.67, "Diff 07-08-2026": 9.77, "Diff 06-08-2026": 9.67, "Diff 05-08-2026": 9.67, "Count": 7, "Sub region": "Central-5", "Grid": "C5004", "SiteClassification": "Gold", "Status": "Resolved", "RCA Detail": "Team Engaged", "Repetitive Pre Wk": "Yes"}, {"Link Name": "40807-7731_MW_OMT_NEW_P", "Unique Link Name": "40807-7731_MW_OMT_NEW_P-3-ISV3", "Site IDs": 40807, "Source NE Name": "40807-1", "Source NE ID": "153-42596", "Source Board": "3-ISV3", "Sink NE Name": "7731-2 3rd", "Sink NE ID": 2129943, "Sink Board": "10-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(215Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-38.02", "MAX RSL 11-08-2026": -51.6, "MAX RSL 10-08-2026": -53.7, "MAX RSL 09-08-2026": -53.9, "MAX RSL 08-08-2026": -54.1, "MAX RSL 07-08-2026": -53.6, "MAX RSL 06-08-2026": -51.1, "MAX RSL 05-08-2026": -53.7, "Diff 11-08-2026": 13.58, "Diff 10-08-2026": 15.68, "Diff 09-08-2026": 15.88, "Diff 08-08-2026": 16.08, "Diff 07-08-2026": 15.58, "Diff 06-08-2026": 13.08, "Diff 05-08-2026": 15.68, "Count": 7, "Sub region": "Central-5", "Grid": "C5002", "SiteClassification": "Platinum", "Status": "Resolved", "RCA Detail": "Team performed Activity But not resolved", "Repetitive Pre Wk": "Yes"}, {"Link Name": "40124-4116_MW_SDB_P", "Unique Link Name": "40124-4116_MW_SDB_P-1-MXXI5", "Site IDs": 40124, "Source NE Name": "40124-1", "Source NE ID": 1737277, "Source Board": "1-MXXI5", "Sink NE Name": "4116-8", "Sink NE ID": 809500, "Sink Board": "1-MXXI5", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.46", "MAX RSL 11-08-2026": -47.9, "MAX RSL 10-08-2026": -48.5, "MAX RSL 09-08-2026": -49, "MAX RSL 08-08-2026": -48.8, "MAX RSL 07-08-2026": -48.4, "MAX RSL 06-08-2026": -49, "MAX RSL 05-08-2026": -48.9, "Diff 11-08-2026": 14.44, "Diff 10-08-2026": 15.04, "Diff 09-08-2026": 15.54, "Diff 08-08-2026": 15.34, "Diff 07-08-2026": 14.94, "Diff 06-08-2026": 15.54, "Diff 05-08-2026": 15.44, "Count": 7, "Sub region": "Central-2", "Grid": "C2003", "SiteClassification": "Silver", "Status": "Level-2 Tkt", "RCA Detail": "Case Forward to L2", "Repetitive Pre Wk": "Yes"}, {"Link Name": "6217-5394_MW_SDB_P", "Unique Link Name": "6217-5394_MW_SDB_P-1-MXXI4", "Site IDs": 6217, "Source NE Name": "6217-3", "Source NE ID": "202-33837", "Source Board": "1-MXXI4", "Sink NE Name": "5394-7", "Sink NE ID": "202-33954", "Sink Board": "1-MXXI4", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.2", "MAX RSL 11-08-2026": -40.4, "MAX RSL 10-08-2026": -40.5, "MAX RSL 09-08-2026": -40.3, "MAX RSL 08-08-2026": -40.2, "MAX RSL 07-08-2026": -40.3, "MAX RSL 06-08-2026": -40.6, "MAX RSL 05-08-2026": -40.3, "Diff 11-08-2026": 9.2, "Diff 10-08-2026": 9.3, "Diff 09-08-2026": 9.1, "Diff 08-08-2026": 9, "Diff 07-08-2026": 9.1, "Diff 06-08-2026": 9.4, "Diff 05-08-2026": 9.1, "Count": 7, "Sub region": "Central-2", "Grid": "C2008", "SiteClassification": "Gold", "Status": "Pending", "RCA Detail": "Plan in this week", "Repetitive Pre Wk": "Yes"}, {"Link Name": "4664-4113_MW_SDB_P", "Unique Link Name": "4664-4113_MW_SDB_P-1-MXXI4", "Site IDs": 4664, "Source NE Name": "4664-4", "Source NE ID": "204-30267", "Source Board": "1-MXXI4", "Sink NE Name": "4113-7", "Sink NE ID": "202-44281", "Sink Board": "1-MXXI4", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.09", "MAX RSL 11-08-2026": -40.5, "MAX RSL 10-08-2026": -41.8, "MAX RSL 09-08-2026": -41.4, "MAX RSL 08-08-2026": -41.6, "MAX RSL 07-08-2026": -41.1, "MAX RSL 06-08-2026": -41.4, "MAX RSL 05-08-2026": -40.2, "Diff 11-08-2026": 9.41, "Diff 10-08-2026": 10.71, "Diff 09-08-2026": 10.31, "Diff 08-08-2026": 10.51, "Diff 07-08-2026": 10.01, "Diff 06-08-2026": 10.31, "Diff 05-08-2026": 9.11, "Count": 7, "Sub region": "Central-2", "Grid": "C2004", "SiteClassification": "Silver", "Status": "Pending", "RCA Detail": "Plan in this week", "Repetitive Pre Wk": "Yes"}, {"Link Name": "6737-4351_MW_SDB_P", "Unique Link Name": "6737-4351_MW_SDB_P-1-MXXI4", "Site IDs": 6737, "Source NE Name": "6737-4", "Source NE ID": "204-24786", "Source Board": "1-MXXI4", "Sink NE Name": "4351-7", "Sink NE ID": "204-29801", "Sink Board": "1-MXXI4", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.26", "MAX RSL 11-08-2026": -44.6, "MAX RSL 10-08-2026": -44.7, "MAX RSL 09-08-2026": -44.8, "MAX RSL 08-08-2026": -44.4, "MAX RSL 07-08-2026": -44.7, "MAX RSL 06-08-2026": -44.8, "MAX RSL 05-08-2026": -44.7, "Diff 11-08-2026": 13.34, "Diff 10-08-2026": 13.44, "Diff 09-08-2026": 13.54, "Diff 08-08-2026": 13.14, "Diff 07-08-2026": 13.44, "Diff 06-08-2026": 13.54, "Diff 05-08-2026": 13.44, "Count": 7, "Sub region": "Central-6", "Grid": "C6003", "SiteClassification": "Silver", "Status": "Level-2 Tkt", "RCA Detail": "Level-2 TT raised", "Repetitive Pre Wk": "Yes"}, {"Link Name": "4626-6457_MW_SDB_P", "Unique Link Name": "4626-6457_MW_SDB_P-1-MXXI4B", "Site IDs": 6457, "Source NE Name": "6457-4", "Source NE ID": "202-45352", "Source Board": "1-MXXI4B", "Sink NE Name": "4626-3", "Sink NE ID": "203-45022", "Sink Board": "1-MXXI4", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.05", "MAX RSL 11-08-2026": -48.1, "MAX RSL 10-08-2026": -48.8, "MAX RSL 09-08-2026": -49, "MAX RSL 08-08-2026": -48.7, "MAX RSL 07-08-2026": -47.9, "MAX RSL 06-08-2026": -48.6, "MAX RSL 05-08-2026": -48.4, "Diff 11-08-2026": 17.05, "Diff 10-08-2026": 17.75, "Diff 09-08-2026": 17.95, "Diff 08-08-2026": 17.65, "Diff 07-08-2026": 16.85, "Diff 06-08-2026": 17.55, "Diff 05-08-2026": 17.35, "Count": 7, "Sub region": "Central-1", "Grid": "C1002", "SiteClassification": "Platinum", "Status": "Level-2 Tkt", "RCA Detail": "Level-2 TT raised", "Repetitive Pre Wk": "Yes"}, {"Link Name": "5110-WateenSialkot_MW_SDB_REL_P", "Unique Link Name": "5110-WateenSialkot_MW_SDB_REL_P-1-MXXI4", "Site IDs": 5110, "Source NE Name": "5110-4", "Source NE ID": "205-38178", "Source Board": "1-MXXI4", "Sink NE Name": "WateenSialkot-2", "Sink NE ID": "204-39404", "Sink Board": "1-MXXI4", "Sink Port": "1(IF)", "Level": "Hybrid(1803Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.03", "MAX RSL 11-08-2026": -43.5, "MAX RSL 10-08-2026": -43.6, "MAX RSL 09-08-2026": -43.5, "MAX RSL 08-08-2026": -43.5, "MAX RSL 07-08-2026": -42.6, "MAX RSL 06-08-2026": -42.8, "MAX RSL 05-08-2026": -42, "Diff 11-08-2026": 10.47, "Diff 10-08-2026": 10.57, "Diff 09-08-2026": 10.47, "Diff 08-08-2026": 10.47, "Diff 07-08-2026": 9.57, "Diff 06-08-2026": 9.77, "Diff 05-08-2026": 8.97, "Count": 7, "Sub region": "Central-5", "Grid": "C5002", "SiteClassification": "P+", "Status": "LOS Issue", "RCA Detail": "LOS Issue Support Required", "Repetitive Pre Wk": "Yes"}, {"Link Name": "5376-4971_MW_SDB_P", "Unique Link Name": "5376-4971_MW_SDB_P-1-MXXI4B", "Site IDs": 4971, "Source NE Name": "4971-4", "Source NE ID": "222-36592", "Source Board": "1-MXXI4B", "Sink NE Name": "5376-5", "Sink NE ID": "222-40156", "Sink Board": "1-MXXI4B", "Sink Port": "1(IF)", "Level": "Hybrid(1518Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.54", "MAX RSL 11-08-2026": -43.9, "MAX RSL 10-08-2026": -43.9, "MAX RSL 09-08-2026": -43.7, "MAX RSL 08-08-2026": -44, "MAX RSL 07-08-2026": -43.9, "MAX RSL 06-08-2026": -43.8, "MAX RSL 05-08-2026": -43.7, "Diff 11-08-2026": 12.36, "Diff 10-08-2026": 12.36, "Diff 09-08-2026": 12.16, "Diff 08-08-2026": 12.46, "Diff 07-08-2026": 12.36, "Diff 06-08-2026": 12.26, "Diff 05-08-2026": 12.16, "Count": 7, "Sub region": "Central-2", "Grid": "C2008", "SiteClassification": "Platinum", "Status": "Pending", "RCA Detail": "Troubleshoting is in process", "Repetitive Pre Wk": "Yes"}, {"Link Name": "42629-4385_MW_NEW_P", "Unique Link Name": "42629-4385_MW_NEW_P-3-ISV3", "Site IDs": 42629, "Source NE Name": "42629-3", "Source NE ID": "145-39357", "Source Board": "3-ISV3", "Sink NE Name": "4385-1", "Sink NE ID": 907842, "Sink Board": "2-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(323Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.9", "MAX RSL 11-08-2026": -53.2, "MAX RSL 10-08-2026": -52.6, "MAX RSL 09-08-2026": -52.5, "MAX RSL 08-08-2026": -52.1, "MAX RSL 07-08-2026": -52.2, "MAX RSL 06-08-2026": -53, "MAX RSL 05-08-2026": -52.7, "Diff 11-08-2026": 21.3, "Diff 10-08-2026": 20.7, "Diff 09-08-2026": 20.6, "Diff 08-08-2026": 20.2, "Diff 07-08-2026": 20.3, "Diff 06-08-2026": 21.1, "Diff 05-08-2026": 20.8, "Count": 7, "Sub region": "Central-6", "Grid": "C6005", "SiteClassification": "P+", "Status": "Pending", "RCA Detail": "PTCL tower broken email shared", "Repetitive Pre Wk": "Yes"}, {"Link Name": "5633-5634_MW_NEW_P", "Unique Link Name": "5633-5634_MW_NEW_P-3-ISM8", "Site IDs": 5633, "Source NE Name": "5633-2", "Source NE ID": "223-27926", "Source Board": "3-ISM8", "Sink NE Name": "5634-6", "Sink NE ID": "218-31214", "Sink Board": "1-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(228Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.96", "MAX RSL 11-08-2026": -48.2, "MAX RSL 10-08-2026": -49.2, "MAX RSL 09-08-2026": -49.1, "MAX RSL 08-08-2026": -48.9, "MAX RSL 07-08-2026": -48.6, "MAX RSL 06-08-2026": -48.5, "MAX RSL 05-08-2026": -47.6, "Diff 11-08-2026": 14.24, "Diff 10-08-2026": 15.24, "Diff 09-08-2026": 15.14, "Diff 08-08-2026": 14.94, "Diff 07-08-2026": 14.64, "Diff 06-08-2026": 14.54, "Diff 05-08-2026": 13.64, "Count": 7, "Sub region": "Central-5", "Grid": "C5007", "SiteClassification": "Silver", "Status": "Pending", "RCA Detail": "Huawei nd ATP pending", "Repetitive Pre Wk": "Yes"}, {"Link Name": "43890-40729_MW_CA_TDD_NEW_P", "Unique Link Name": "43890-40729_MW_CA_TDD_NEW_P-4-ISM8", "Site IDs": 43890, "Source NE Name": "43890-2", "Source NE ID": "187-29989", "Source Board": "4-ISM8", "Sink NE Name": "40729-3", "Sink NE ID": "187-29502", "Sink Board": "6-ISM8", "Sink Port": "2(RTNIF-2)", "Level": "Hybrid(256Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.51", "MAX RSL 11-08-2026": -38.8, "MAX RSL 10-08-2026": -39, "MAX RSL 09-08-2026": -39, "MAX RSL 08-08-2026": -39.1, "MAX RSL 07-08-2026": -39, "MAX RSL 06-08-2026": -38.6, "MAX RSL 05-08-2026": -38.8, "Diff 11-08-2026": 7.29, "Diff 10-08-2026": 7.49, "Diff 09-08-2026": 7.49, "Diff 08-08-2026": 7.59, "Diff 07-08-2026": 7.49, "Diff 06-08-2026": 7.09, "Diff 05-08-2026": 7.29, "Count": 7, "Sub region": "Central-6", "Grid": "C6003", "SiteClassification": "Gold", "Status": "Pending", "RCA Detail": "New link installed by huawei email shared", "Repetitive Pre Wk": "No"}, {"Link Name": "44015-4190_MW_RO_REL_P", "Unique Link Name": "44015-4190_MW_RO_REL_P-4-ISV3", "Site IDs": 44015, "Source NE Name": "44015-1", "Source NE ID": "165-7945", "Source Board": "4-ISV3", "Sink NE Name": "4190-2-FN", "Sink NE ID": 836620, "Sink Board": "2-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(242Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.46", "MAX RSL 11-08-2026": -41.1, "MAX RSL 10-08-2026": -41.6, "MAX RSL 09-08-2026": -42.6, "MAX RSL 08-08-2026": -43.7, "MAX RSL 07-08-2026": -41.5, "MAX RSL 06-08-2026": -42.1, "MAX RSL 05-08-2026": -40.3, "Diff 11-08-2026": 9.64, "Diff 10-08-2026": 10.14, "Diff 09-08-2026": 11.14, "Diff 08-08-2026": 12.24, "Diff 07-08-2026": 10.04, "Diff 06-08-2026": 10.64, "Diff 05-08-2026": 8.84, "Count": 7, "Sub region": "Central-2", "Grid": "C2006", "SiteClassification": "Silver", "Status": "LOS Issue", "RCA Detail": "LOS Issue", "Repetitive Pre Wk": "Yes"}, {"Link Name": "4330-4091_MW_SDB_NEW_P", "Unique Link Name": "4330-4091_MW_SDB_NEW_P-1-MXXI4B", "Site IDs": 4330, "Source NE Name": "4330-4", "Source NE ID": "158-33787", "Source Board": "1-MXXI4B", "Sink NE Name": "4091-13", "Sink NE ID": "158-35387", "Sink Board": "1-MXXI4B", "Sink Port": "1(IF)", "Level": "Hybrid(1803Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.36", "MAX RSL 11-08-2026": -38.5, "MAX RSL 10-08-2026": -38.2, "MAX RSL 09-08-2026": -38.5, "MAX RSL 08-08-2026": -38.5, "MAX RSL 07-08-2026": -38.4, "MAX RSL 06-08-2026": -38.9, "MAX RSL 05-08-2026": -38.2, "Diff 11-08-2026": 7.14, "Diff 10-08-2026": 6.84, "Diff 09-08-2026": 7.14, "Diff 08-08-2026": 7.14, "Diff 07-08-2026": 7.04, "Diff 06-08-2026": 7.54, "Diff 05-08-2026": 6.84, "Count": 5, "Sub region": "Central-5", "Grid": "C5003", "SiteClassification": "Platinum", "Status": "Resolved", "RCA Detail": "Team Engaged", "Repetitive Pre Wk": "No"}, {"Link Name": "4080-4323_MW_SDB_TDD_NEW_P", "Unique Link Name": "4080-4323_MW_SDB_TDD_NEW_P-1-MXXI5E", "Site IDs": 4080, "Source NE Name": "4080-3", "Source NE ID": "186-44723", "Source Board": "1-MXXI5E", "Sink NE Name": "4323-12", "Sink NE ID": "186-49015", "Sink Board": "1-MXXI5E", "Sink Port": "1(IF)", "Level": "Hybrid(1333Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-30.56", "MAX RSL 11-08-2026": -45.2, "MAX RSL 10-08-2026": -43.2, "MAX RSL 09-08-2026": -46, "MAX RSL 08-08-2026": -44.4, "MAX RSL 07-08-2026": -45, "MAX RSL 06-08-2026": -45.2, "MAX RSL 05-08-2026": -45.8, "Diff 11-08-2026": 14.64, "Diff 10-08-2026": 12.64, "Diff 09-08-2026": 15.44, "Diff 08-08-2026": 13.84, "Diff 07-08-2026": 14.44, "Diff 06-08-2026": 14.64, "Diff 05-08-2026": 15.24, "Count": 7, "Sub region": "Central-5", "Grid": "C5002", "SiteClassification": "Platinum", "Status": "Resolved", "RCA Detail": "new Link installed ATP Pending", "Repetitive Pre Wk": "Yes"}, {"Link Name": "6740-4217_MW_SWAP_REL_P", "Unique Link Name": "6740-4217_MW_SWAP_REL_P-3-ISV3", "Site IDs": 6740, "Source NE Name": "6740-2", "Source NE ID": "154-36540", "Source Board": "3-ISV3", "Sink NE Name": "4217-4", "Sink NE ID": "9-13146", "Sink Board": "6-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(228Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-35.56", "MAX RSL 11-08-2026": -57.5, "MAX RSL 10-08-2026": -57.5, "MAX RSL 09-08-2026": -57.8, "MAX RSL 08-08-2026": -57.6, "MAX RSL 07-08-2026": -57.4, "MAX RSL 06-08-2026": -57.6, "MAX RSL 05-08-2026": -57.6, "Diff 11-08-2026": 21.94, "Diff 10-08-2026": 21.94, "Diff 09-08-2026": 22.24, "Diff 08-08-2026": 22.04, "Diff 07-08-2026": 21.84, "Diff 06-08-2026": 22.04, "Diff 05-08-2026": 22.04, "Count": 7, "Sub region": "Central-5", "Grid": "C5001", "SiteClassification": "Bronze", "Status": "Pending", "RCA Detail": "Team performed Activity But not resolved", "Repetitive Pre Wk": "Yes"}, {"Link Name": "43890-40729_MW_CA_TDD_NEW_P", "Unique Link Name": "43890-40729_MW_CA_TDD_NEW_P-4-ISM8", "Site IDs": 43890, "Source NE Name": "40729-3", "Source NE ID": "187-29502", "Source Board": "4-ISM8", "Sink NE Name": "43890-2", "Sink NE ID": "187-29989", "Sink Board": "3-ISM8", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(256Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.51", "MAX RSL 11-08-2026": -38.4, "MAX RSL 10-08-2026": -39, "MAX RSL 09-08-2026": -39, "MAX RSL 08-08-2026": -39.1, "MAX RSL 07-08-2026": -39, "MAX RSL 06-08-2026": -38.6, "MAX RSL 05-08-2026": -38.8, "Diff 11-08-2026": 6.89, "Diff 10-08-2026": 7.49, "Diff 09-08-2026": 7.49, "Diff 08-08-2026": 7.59, "Diff 07-08-2026": 7.49, "Diff 06-08-2026": 7.09, "Diff 05-08-2026": 7.29, "Count": 6, "Sub region": "Central-6", "Grid": "C6003", "SiteClassification": "Gold", "Status": "Pending", "RCA Detail": "New link installed by huawei email shared", "Repetitive Pre Wk": "No"}, {"Link Name": "42371-5547_MW_SDB_TDD_NEW_P", "Unique Link Name": "42371-5547_MW_SDB_TDD_NEW_P-1-MXXI5E", "Site IDs": 42371, "Source NE Name": "5547-8", "Source NE ID": "185-24668", "Source Board": "1-MXXI5E", "Sink NE Name": "42371-5", "Sink NE ID": "184-49111", "Sink Board": "1-MXXI5E", "Sink Port": "1(IF)", "Level": "Hybrid(1333Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-31.34", "MAX RSL 11-08-2026": -52.6, "MAX RSL 10-08-2026": -53.8, "MAX RSL 09-08-2026": -53.9, "MAX RSL 08-08-2026": -53.1, "MAX RSL 07-08-2026": -53.8, "MAX RSL 06-08-2026": -53.3, "MAX RSL 05-08-2026": -51.8, "Diff 11-08-2026": 21.26, "Diff 10-08-2026": 22.46, "Diff 09-08-2026": 22.56, "Diff 08-08-2026": 21.76, "Diff 07-08-2026": 22.46, "Diff 06-08-2026": 21.96, "Diff 05-08-2026": 20.46, "Count": 7, "Sub region": "Central-6", "Grid": "C6005", "SiteClassification": "P+", "Status": "Pending", "RCA Detail": "New link installed by huawei email shared", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44362-5609_MW_RO_NEW_P", "Unique Link Name": "44362-5609_MW_RO_NEW_P-3-ISM8", "Site IDs": 44362, "Source NE Name": "44362-1", "Source NE ID": "157-34519", "Source Board": "3-ISM8", "Sink NE Name": "5609-3-FN", "Sink NE ID": 1354930, "Sink Board": "1-ISM8", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(228Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-30.69", "MAX RSL 11-08-2026": -44, "MAX RSL 10-08-2026": -45.2, "MAX RSL 09-08-2026": -44.7, "MAX RSL 08-08-2026": -44.8, "MAX RSL 07-08-2026": -45.1, "MAX RSL 06-08-2026": -43, "MAX RSL 05-08-2026": -44.5, "Diff 11-08-2026": 13.31, "Diff 10-08-2026": 14.51, "Diff 09-08-2026": 14.01, "Diff 08-08-2026": 14.11, "Diff 07-08-2026": 14.41, "Diff 06-08-2026": 12.31, "Diff 05-08-2026": 13.81, "Count": 7, "Sub region": "Central-5", "Grid": "C5008", "SiteClassification": "Gold", "Status": "Resolved", "RCA Detail": "Team performed Activity But not resolved", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44420-5152_MW_RO_REL_P", "Unique Link Name": "44420-5152_MW_RO_REL_P-3-ISV3", "Site IDs": 44420, "Source NE Name": "44420-1", "Source NE ID": "9-44420", "Source Board": "3-ISV3", "Sink NE Name": "5152-4", "Sink NE ID": "207-33673", "Sink Board": "6-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(480Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-32.52", "MAX RSL 11-08-2026": -44.6, "MAX RSL 10-08-2026": -45.8, "MAX RSL 09-08-2026": -48.6, "MAX RSL 08-08-2026": -49.2, "MAX RSL 07-08-2026": -48.8, "MAX RSL 06-08-2026": -47.6, "MAX RSL 05-08-2026": -48.2, "Diff 11-08-2026": 12.08, "Diff 10-08-2026": 13.28, "Diff 09-08-2026": 16.08, "Diff 08-08-2026": 16.68, "Diff 07-08-2026": 16.28, "Diff 06-08-2026": 15.08, "Diff 05-08-2026": 15.68, "Count": 7, "Sub region": "Central-5", "Grid": "C5008", "SiteClassification": "Silver", "Status": "Pending", "RCA Detail": "MW Dish Left right Lock Broken", "Repetitive Pre Wk": "Yes"}, {"Link Name": "43526-42474_MW_CA_TDD_NEW_P", "Unique Link Name": "43526-42474_MW_CA_TDD_NEW_P-3-ISM8", "Site IDs": 43526, "Source NE Name": "42474-5", "Source NE ID": "187-29514", "Source Board": "3-ISM8", "Sink NE Name": "43526-2", "Sink NE ID": "187-29913", "Sink Board": "3-ISM8", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(256Mbit/s)", "Source Protect Type": "/", "Sink Protect Type": "None", "Planned RSL": "-32.38", "MAX RSL 11-08-2026": -51.3, "MAX RSL 10-08-2026": -51.5, "MAX RSL 09-08-2026": -51.2, "MAX RSL 08-08-2026": -51.5, "MAX RSL 07-08-2026": -51, "MAX RSL 06-08-2026": -50.7, "MAX RSL 05-08-2026": -50.7, "Diff 11-08-2026": 18.92, "Diff 10-08-2026": 19.12, "Diff 09-08-2026": 18.82, "Diff 08-08-2026": 19.12, "Diff 07-08-2026": 18.62, "Diff 06-08-2026": 18.32, "Diff 05-08-2026": 18.32, "Count": 7, "Sub region": "Central-6", "Grid": "C6005", "SiteClassification": "Gold", "Status": "Pending", "RCA Detail": "New link installed by huawei email shared", "Repetitive Pre Wk": "Yes"}, {"Link Name": "44650-6208_MW_RO_REL_P", "Unique Link Name": "44650-6208_MW_RO_REL_P-3-ISM8", "Site IDs": 44650, "Source NE Name": "44650-1", "Source NE ID": "167-33015", "Source Board": "3-ISM8", "Sink NE Name": "6208-4", "Sink NE ID": "218-6208", "Sink Board": "4-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(242Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-33.79", "MAX RSL 11-08-2026": -54.8, "MAX RSL 10-08-2026": -54.7, "MAX RSL 09-08-2026": -55, "MAX RSL 08-08-2026": -54.8, "MAX RSL 07-08-2026": -55, "MAX RSL 06-08-2026": -55.2, "MAX RSL 05-08-2026": -54.8, "Diff 11-08-2026": 21.01, "Diff 10-08-2026": 20.91, "Diff 09-08-2026": 21.21, "Diff 08-08-2026": 21.01, "Diff 07-08-2026": 21.21, "Diff 06-08-2026": 21.41, "Diff 05-08-2026": 21.01, "Count": 7, "Sub region": "Central-2", "Grid": "C2009", "SiteClassification": "Silver", "Status": "Resolved", "RCA Detail": "Resolved", "Repetitive Pre Wk": "No"}, {"Link Name": "43198-4964_MW_NPS_NEW_P", "Unique Link Name": "43198-4964_MW_NPS_NEW_P-3-ISM8", "Site IDs": 43198, "Source NE Name": "43198-1", "Source NE ID": "223-28127", "Source Board": "3-ISM8", "Sink NE Name": "4964-2", "Sink NE ID": "8-14964", "Sink Board": "10-ISV3", "Sink Port": "1(RTNIF-1)", "Level": "Hybrid(447Mbit/s)", "Source Protect Type": "None", "Sink Protect Type": "None", "Planned RSL": "-32.95", "MAX RSL 11-08-2026": -49.1, "MAX RSL 10-08-2026": -49.9, "MAX RSL 09-08-2026": -50.1, "MAX RSL 08-08-2026": -49.9, "MAX RSL 07-08-2026": -50.3, "MAX RSL 06-08-2026": -49.4, "MAX RSL 05-08-2026": -49.4, "Diff 11-08-2026": 16.15, "Diff 10-08-2026": 16.95, "Diff 09-08-2026": 17.15, "Diff 08-08-2026": 16.95, "Diff 07-08-2026": 17.35, "Diff 06-08-2026": 16.45, "Diff 05-08-2026": 16.45, "Count": 7, "Sub region": "Central-6", "Grid": "C6003", "SiteClassification": "Platinum", "Status": "Resolved", "RCA Detail": "In progress", "Repetitive Pre Wk": "Yes"}]}, {"sheet": "TXN Critical Alarms", "row_count": 289, "columns": ["Severity", "Name", "Alarm Source", "Sites", "Region", "Grid", "Location Info", "First Occurred (ST)", "Last Occurred (ST)", "Fiber/Cable Name", "Utilization", "Aging (DAYS)", "Resolved Status"], "sample_records": [{"Severity": "Major", "Name": "AM_DOWNSHIFT", "Alarm Source": "7148-2", "Sites": 7148, "Region": "Central-5", "Grid": "C5005", "Location Info": "14-ISV3-1(RTNIF-1)-RTNIF:1", "First Occurred (ST)": "2026-10-18 08:54:31", "Last Occurred (ST)": "2026-10-18 08:54:31", "Fiber/Cable Name": "41171-7148_MW_NEW_P", "Aging (DAYS)": 0.628807870372839, "Resolved Status": "Resolved"}, {"Severity": "Major", "Name": "AM_DOWNSHIFT", "Alarm Source": "41782-4", "Sites": 41782, "Region": "Central-2", "Grid": "C2001", "Location Info": "13-ISM8-2(RTNIF-2)-RTNIF:1", "First Occurred (ST)": "2026-10-18 03:39:02", "Last Occurred (ST)": "2026-10-18 03:39:02", "Fiber/Cable Name": "41761-41782_MW_NEW2_P", "Aging (DAYS)": 0.847893518519413, "Resolved Status": "Resolved"}, {"Severity": "Major", "Name": "AM_DOWNSHIFT", "Alarm Source": "40257-2", "Sites": 40257, "Region": "Central-2", "Grid": "C2007", "Location Info": "2-ISV3-1(RTNIF-1)-RTNIF:1", "First Occurred (ST)": "2026-10-17 17:26:20", "Last Occurred (ST)": "2026-10-17 17:26:20", "Fiber/Cable Name": "5393-40257_MW_OMT_NEW_P", "Aging (DAYS)": 1.27337962963065, "Resolved Status": "Pending"}, {"Severity": "Major", "Name": "AM_DOWNSHIFT", "Alarm Source": "5164-2", "Sites": 5164, "Region": "Central-5", "Grid": "C5002", "Location Info": "5-ISM8-1(RTNIF-1)-RTNIF:1", "First Occurred (ST)": "2026-10-16 15:58:37", "Last Occurred (ST)": "2026-10-16 15:58:37", "Fiber/Cable Name": "4992-5164_MW_XPIC_NEW_P", "Aging (DAYS)": 2.33429398148292, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "7210-2", "Sites": 7210, "Region": "Central-5", "Grid": "C5007", "Location Info": "15-CSHNU-OTHER Alarm Parameter II(hex) 0x34 0x00 0x02", "First Occurred (ST)": "2026-10-18 09:21:18", "Last Occurred (ST)": "2026-10-18 09:21:18", "Fiber/Cable Name": "-", "Aging (DAYS)": 0.610208333331684, "Resolved Status": "Pending"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6144-2", "Sites": 6144, "Region": "Central-2", "Grid": "C2005", "Location Info": "2-ISV3-IFE:1 Alarm Parameter II(hex) 0x09 0x03", "First Occurred (ST)": "2026-10-17 21:27:22", "Last Occurred (ST)": "2026-10-17 21:27:22", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.10599537037342, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x0c 0x07 0x00 0x0e", "First Occurred (ST)": "2026-10-17 17:17:28", "Last Occurred (ST)": "2026-10-17 17:17:28", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.27953703703679, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x0c 0x07 0x00 0x09", "First Occurred (ST)": "2026-10-17 17:17:28", "Last Occurred (ST)": "2026-10-17 17:17:28", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.27953703703679, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x0c 0x07 0x00 0x07", "First Occurred (ST)": "2026-10-17 17:17:28", "Last Occurred (ST)": "2026-10-17 17:17:28", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.27953703703679, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x0c 0x07 0x00 0x05", "First Occurred (ST)": "2026-10-17 17:17:27", "Last Occurred (ST)": "2026-10-17 17:17:27", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.27954861111357, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x0c 0x07 0x00 0x03", "First Occurred (ST)": "2026-10-17 17:17:27", "Last Occurred (ST)": "2026-10-17 17:17:27", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.27954861111357, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "BUS_ERR", "Alarm Source": "5793-2", "Sites": 5793, "Region": "Central-2", "Grid": "C2008", "Location Info": "4-ISV3-IFE:1 Alarm Parameter II(hex) 0x09 0x04", "First Occurred (ST)": "2026-10-16 14:37:10", "Last Occurred (ST)": "2026-10-16 14:37:10", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.39085648148466, "Resolved Status": "Pending"}, {"Severity": "Critical", "Name": "HARD_BAD", "Alarm Source": "5661-3", "Sites": 5661, "Region": "Central-2", "Grid": "C2009", "Location Info": "7-CSHO-OTHER", "First Occurred (ST)": "2026-10-18 03:51:34", "Last Occurred (ST)": "2026-10-18 03:51:34", "Fiber/Cable Name": "-", "Aging (DAYS)": 0.839189814818383, "Resolved Status": "Resolved"}, {"Severity": "Major", "Name": "LAG_DOWN", "Alarm Source": "6044-3", "Sites": 6044, "Region": "Central-5", "Grid": "C5005", "Location Info": "LINK AGGREGATION GROUP:(3:)", "First Occurred (ST)": "2026-10-18 09:34:50", "Last Occurred (ST)": "2026-10-18 09:34:50", "Fiber/Cable Name": "-", "Aging (DAYS)": 0.600810185183946, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "LAG_MEMBER_DOWN", "Alarm Source": "6044-3", "Sites": 6044, "Region": "Central-5", "Grid": "C5005", "Location Info": "LINK AGGREGATION GROUP:(3:)", "First Occurred (ST)": "2026-10-18 09:34:52", "Last Occurred (ST)": "2026-10-18 09:34:52", "Fiber/Cable Name": "-", "Aging (DAYS)": 0.600787037037662, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "LAG_MEMBER_DOWN", "Alarm Source": "6174-4-FN", "Sites": 6174, "Region": "Central-5", "Grid": "C5001", "Location Info": "LINK AGGREGATION GROUP:(2:)", "First Occurred (ST)": "2026-10-17 17:13:20", "Last Occurred (ST)": "2026-10-17 17:13:20", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.28240740740875, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "LAG_MEMBER_DOWN", "Alarm Source": "6059-2_FN", "Sites": 6059, "Region": "Central-2", "Grid": "C2009", "Location Info": "LINK AGGREGATION GROUP:(6:RTN to PTN LAG 4)", "First Occurred (ST)": "2026-10-17 15:33:55", "Last Occurred (ST)": "2026-10-17 15:33:55", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.35144675926131, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_CFG_MISMATCH", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "7-CSHOF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x00", "First Occurred (ST)": "2026-10-16 15:33:23", "Last Occurred (ST)": "2026-10-16 15:33:23", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.35181712963094, "Resolved Status": "Resolved"}, {"Severity": "Major", "Name": "PLA_DOWN", "Alarm Source": "42663-5", "Sites": 42663, "Region": "Central-6", "Grid": "C6003", "Location Info": "-", "First Occurred (ST)": "2026-10-17 16:29:11", "Last Occurred (ST)": "2026-10-17 16:29:11", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.31306712963124, "Resolved Status": "Resolved"}, {"Severity": "Major", "Name": "PLA_DOWN", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "-", "First Occurred (ST)": "2026-10-16 15:30:30", "Last Occurred (ST)": "2026-10-16 15:30:30", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.35381944444089, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "42663-5", "Sites": 42663, "Region": "Central-6", "Grid": "C6003", "Location Info": "1-CSHRF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x05 0xa6 0xa7 0x00 0x03 0xff 0x00 0x02 0xff 0xff 0x04", "First Occurred (ST)": "2026-10-17 16:29:27", "Last Occurred (ST)": "2026-10-17 16:29:27", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.31288194444642, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "42663-5", "Sites": 42663, "Region": "Central-6", "Grid": "C6003", "Location Info": "1-CSHRF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x05 0xa6 0xa7 0x00 0x03 0xff 0x00 0x01 0xff 0xff 0x04", "First Occurred (ST)": "2026-10-17 16:29:27", "Last Occurred (ST)": "2026-10-17 16:29:27", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.31288194444642, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "42663-5", "Sites": 42663, "Region": "Central-6", "Grid": "C6003", "Location Info": "1-CSHRF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x05 0xa6 0xa7 0x00 0x04 0xff 0x00 0x01 0xff 0xff 0x04", "First Occurred (ST)": "2026-10-17 16:28:09", "Last Occurred (ST)": "2026-10-17 16:28:09", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.31378472222423, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "42663-5", "Sites": 42663, "Region": "Central-6", "Grid": "C6003", "Location Info": "1-CSHRF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x05 0xa6 0xa7 0x00 0x04 0xff 0x00 0x02 0xff 0xff 0x04", "First Occurred (ST)": "2026-10-17 16:28:09", "Last Occurred (ST)": "2026-10-17 16:28:09", "Fiber/Cable Name": "-", "Aging (DAYS)": 1.31378472222423, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "4399-3", "Sites": 4399, "Region": "Central-2", "Grid": "C2010", "Location Info": "20-CSHNU-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0x09 0x38 0x3f 0x00 0x0e 0xff 0x00 0x01 0xff 0xff 0x04", "First Occurred (ST)": "2026-10-16 18:46:14", "Last Occurred (ST)": "2026-10-16 18:46:14", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.21789351852203, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "6392-1", "Sites": 6392, "Region": "Central-4", "Grid": "C4004", "Location Info": "15-CSHNA-OTHER Alarm Parameter II(hex) 0x00 0x0a 0x00 0x08 0x18 0xf8 0x00 0x0a 0xff 0x00 0x01 0xff 0xff 0x05", "First Occurred (ST)": "2026-10-16 18:41:25", "Last Occurred (ST)": "2026-10-16 18:41:25", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.22123842592555, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "7-CSHOF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0xc1 0xae 0xae 0x00 0x06 0xff 0x00 0x02 0xff 0xff 0x06", "First Occurred (ST)": "2026-10-16 15:34:47", "Last Occurred (ST)": "2026-10-16 15:34:47", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.35084490740701, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "7-CSHOF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0xc1 0xae 0xae 0x00 0x04 0xff 0x00 0x02 0xff 0xff 0x06", "First Occurred (ST)": "2026-10-16 15:34:38", "Last Occurred (ST)": "2026-10-16 15:34:38", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.3509490740762, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "7-CSHOF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0xc1 0xae 0xae 0x00 0x04 0xff 0x00 0x01 0xff 0xff 0x06", "First Occurred (ST)": "2026-10-16 15:34:38", "Last Occurred (ST)": "2026-10-16 15:34:38", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.3509490740762, "Resolved Status": "Resolved"}, {"Severity": "Critical", "Name": "PLA_MEMBER_DOWN_EXT", "Alarm Source": "4382-1", "Sites": 4382, "Region": "Central-5", "Grid": "C5001", "Location Info": "7-CSHOF-OTHER Alarm Parameter II(hex) 0x00 0x01 0x00 0xc1 0xae 0xae 0x00 0x06 0xff 0x00 0x01 0xff 0xff 0x06", "First Occurred (ST)": "2026-10-16 15:34:37", "Last Occurred (ST)": "2026-10-16 15:34:37", "Fiber/Cable Name": "-", "Aging (DAYS)": 2.3509606481457, "Resolved Status": "Resolved"}]}]}</script>
+<script>
+(function(){
+  'use strict';
+  const el = document.getElementById('multi-year-json-data');
+  if (!el) return;
+  const MY = JSON.parse(el.textContent);
+  const fSel = document.getElementById('yr3-fault-sel');
+  const mSel = document.getElementById('yr3-metric');
+
+  if (fSel && Array.isArray(MY.fault_sheets)) {
+    fSel.innerHTML = MY.fault_sheets.map((f,i) => '<option value="'+i+'">'+f.sheet+' ('+f.row_count+')</option>').join('');
+    fSel.addEventListener('change', () => { if (document.getElementById('p-three_yr') && !document.getElementById('p-three_yr').hidden) drawThreeYr(); });
+  }
+  if (mSel) {
+    mSel.addEventListener('change', () => { if (document.getElementById('p-three_yr') && !document.getElementById('p-three_yr').hidden) drawThreeYr(); });
+  }
+
+  function nfmt(v, dec){
+    if (v === null || v === undefined || Number.isNaN(Number(v))) return '–';
+    return Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+
+  function renderApex3(id, opts){
+    const host = document.getElementById(id);
+    if (!host || !window.ApexCharts) return;
+    if (host._ax) { try { host._ax.destroy(); } catch(e){} }
+    host.innerHTML = '';
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const base = {
+      chart: { background: 'transparent', toolbar: { show: false }, foreColor: dark ? '#93A3C2' : '#4E5F7D' },
+      theme: { mode: dark ? 'dark' : 'light' },
+      grid: { borderColor: dark ? '#243352' : '#DDE4F0', strokeDashArray: 3 },
+      tooltip: { theme: dark ? 'dark' : 'light' },
+      dataLabels: { enabled: false }
+    };
+    const ch = new ApexCharts(host, Object.assign({}, base, opts));
+    host._ax = ch;
+    ch.render();
+  }
+
+  window.drawThreeYr = function(){
+    const kpiHost = document.getElementById('yr3-kpis');
+    const regHost = document.getElementById('yr3-region-tbl');
+    const clsHost = document.getElementById('yr3-cls-tbl');
+    const fltHost = document.getElementById('yr3-fault-tbl');
+    if (!kpiHost) return;
+
+    const activeRegBtn = document.querySelector('#filters [data-region][aria-pressed="true"]');
+    const activeReg = activeRegBtn ? activeRegBtn.dataset.region : 'All';
+
+    const mk = mSel ? mSel.value : 'rev';
+    const map = {
+      rev:   { lbl: 'Rev / site / mo', arr: MY.timeline_25m.revenue_pkr, f24: 'rev_2024_q4',   f25: 'rev_2025_jan_oct',   f26: 'rev_2026_jan_oct',   dec: 0, col: '#d55181' },
+      avl:   { lbl: 'Availability %',  arr: MY.timeline_25m.availability,  f24: 'avl_2024_q4',   f25: 'avl_2025_jan_oct',   f26: 'avl_2026_jan_oct',   dec: 2, col: '#3987e5' },
+      ls:    { lbl: 'Load shedding',   arr: MY.timeline_25m.load_shedding, f24: 'ls_2024_q4',    f25: 'ls_2025_jan_oct',    f26: 'ls_2026_jan_oct',    dec: 2, col: '#c98500' },
+      voice: { lbl: 'Voice Erl/site/d',arr: MY.timeline_25m.voice_erl,     f24: 'voice_2024_q4', f25: 'voice_2025_jan_oct', f26: 'voice_2026_jan_oct', dec: 1, col: '#d95926' },
+      data:  { lbl: 'Data GB/site/d',  arr: MY.timeline_25m.data_gb,       f24: 'data_2024_q4',  f25: 'data_2025_jan_oct',  f26: 'data_2026_jan_oct',  dec: 1, col: '#199e70' },
+      fuel:  { lbl: 'Fuel (L)',        arr: MY.timeline_25m.fuel_l,        f24: 'fuel_2024_q4',  f25: 'fuel_2025_jan_oct',  f26: 'fuel_2026_jan_oct',  dec: 1, col: '#7C6CFF' }
+    };
+    const cfg = map[mk] || map.rev;
+    const allRegs = MY.regions_3yr || [];
+    const regs = activeReg === 'All' ? allRegs : allRegs.filter(r => r.subregion === activeReg);
+    const avgOf = field => regs.length ? regs.reduce((a,b)=>a+(b[field]||0),0)/regs.length : 0;
+    const v24 = avgOf(cfg.f24), v25 = avgOf(cfg.f25), v26 = avgOf(cfg.f26);
+    const yoyDelta = v25 ? ((v26 - v25) / v25 * 100) : 0;
+    const totSites = regs.reduce((a,b)=>a+(b.sites||0),0);
+
+    kpiHost.innerHTML = [
+      '<div class="mc" style="--c:var(--accent)"><span class="l">Scope sites ('+activeReg+')</span><span class="v">'+nfmt(totSites,0)+'</span><span class="s">16 sheets in JSON</span></div>',
+      '<div class="mc" style="--c:var(--s1)"><span class="l">2024 Q4 · '+cfg.lbl+'</span><span class="v">'+nfmt(v24,cfg.dec)+'</span><span class="s">Oct–Dec 2024</span></div>',
+      '<div class="mc" style="--c:var(--s3)"><span class="l">2025 Y10 · '+cfg.lbl+'</span><span class="v">'+nfmt(v25,cfg.dec)+'</span><span class="s">Jan–Oct 2025</span></div>',
+      '<div class="mc" style="--c:var(--s5)"><span class="l">2026 Y10 · '+cfg.lbl+'</span><span class="v">'+nfmt(v26,cfg.dec)+'</span><span class="s">'+(yoyDelta>=0?'+':'')+yoyDelta.toFixed(1)+'% vs 2025 Y10</span></div>'
+    ].join('');
+
+    renderApex3('yr3-trend-chart', {
+      chart: { type: 'line', height: 320, background: 'transparent', toolbar: { show: false }, foreColor: '#93A3C2' },
+      series: [{ name: cfg.lbl, data: cfg.arr }],
+      colors: [cfg.col],
+      stroke: { width: 3, curve: 'smooth' },
+      markers: { size: 4, strokeWidth: 0 },
+      xaxis: { categories: MY.timeline_25m.labels, axisBorder: { show: false } },
+      yaxis: { labels: { formatter: v => nfmt(v, cfg.dec) } },
+      tooltip: { y: { formatter: v => nfmt(v, cfg.dec) } }
+    });
+
+    const bkts = MY.ls_impact_buckets || [];
+    renderApex3('yr3-impact-chart', {
+      chart: { type: 'bar', height: 320, background: 'transparent', toolbar: { show: false }, foreColor: '#93A3C2' },
+      series: [
+        { name: 'Avg Avl %', data: bkts.map(b => b.avg_avl) },
+        { name: 'Avg Rev (K)', data: bkts.map(b => +(b.avg_rev_pkr/1000).toFixed(1)) }
+      ],
+      colors: ['#3987e5', '#199e70'],
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '62%' } },
+      xaxis: { categories: bkts.map(b => b.bucket), axisBorder: { show: false } },
+      legend: { show: true, position: 'top', horizontalAlign: 'left' }
+    });
+
+    if (regHost) {
+      const rRows = regs.map(r => {
+        const d25_26 = r[cfg.f25] ? ((r[cfg.f26] - r[cfg.f25]) / r[cfg.f25] * 100) : 0;
+        return '<tr><td><b>'+r.subregion+'</b></td><td class="num mono">'+nfmt(r.sites,0)+'</td><td class="num mono">'+nfmt(r[cfg.f24],cfg.dec)+'</td><td class="num mono">'+nfmt(r[cfg.f25],cfg.dec)+'</td><td class="num mono">'+nfmt(r[cfg.f26],cfg.dec)+'</td><td class="num mono '+(d25_26>=0?'up':'dn')+'">'+(d25_26>=0?'+':'')+d25_26.toFixed(1)+'%</td></tr>';
+      }).join('');
+      regHost.innerHTML = '<table><thead><tr><th>Sub-region</th><th class="num">Sites</th><th class="num">2024 Q4</th><th class="num">2025 Jan–Oct</th><th class="num">2026 Jan–Oct</th><th class="num">YoY %</th></tr></thead><tbody>'+rRows+'</tbody></table>';
+    }
+
+    if (clsHost) {
+      const cRows = (MY.classification_impact||[]).map(c => '<tr><td><b>'+c.classification+'</b></td><td class="num mono">'+nfmt(c.sites,0)+'</td><td class="num mono">'+nfmt(c.rev_2024_q4,0)+'</td><td class="num mono">'+nfmt(c.rev_2025_jan_oct,0)+'</td><td class="num mono">'+nfmt(c.rev_2026_jan_oct,0)+'</td><td class="num mono">'+nfmt(c.avl_2026_jan_oct,2)+'%</td></tr>').join('');
+      clsHost.innerHTML = '<table><thead><tr><th>Tier</th><th class="num">Sites</th><th class="num">Rev 24 Q4</th><th class="num">Rev 25 Y10</th><th class="num">Rev 26 Y10</th><th class="num">Avl 26 Y10</th></tr></thead><tbody>'+cRows+'</tbody></table>';
+    }
+
+    if (fltHost && Array.isArray(MY.fault_sheets)) {
+      const idx = Number(fSel ? fSel.value : 0) || 0;
+      const fs = MY.fault_sheets[idx] || MY.fault_sheets[0];
+      const recs = (fs && fs.sample_records) || [];
+      if (!recs.length) {
+        fltHost.innerHTML = '<div class="empty">No records in '+fs.sheet+'</div>';
+      } else {
+        const cols = Object.keys(recs[0]).slice(0, 6);
+        const ths = cols.map(c => '<th>'+c+'</th>').join('');
+        const trs = recs.slice(0, 15).map(r => '<tr>'+cols.map(c => '<td>'+(r[c] ?? '–')+'</td>').join('')+'</tr>').join('');
+        fltHost.innerHTML = '<table><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table>';
+      }
+    }
+  };
+
+  const hNow = (location.hash||'').replace('#','');
+  if (hNow === 'three_yr') {
+    document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t==='three_yr'));
+    document.querySelectorAll('.panel').forEach(p => { p.hidden = (p.id !== 'p-three_yr'); });
+    drawThreeYr();
+  }
+})();
+</script>
